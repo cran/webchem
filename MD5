@@ -1,0 +1,15 @@
+a522b52c84a4ab631f5285792d128b30 *DESCRIPTION
+c96d3c8cb974147b91d76d0120d1302a *LICENSE
+041f2a4a416e06eb8a751a581c32198c *NAMESPACE
+3ced7ebc4d93ce613867f7ff6fc3b001 *R/chemspider.R
+7e652f4d413a8453652e69ee13ed6ae9 *R/cir.R
+ae091afb0ab4bf61334eb5f1e9c20ef9 *R/cts.R
+6671e4afe93a40496794a89d1717c882 *R/pubchem.R
+a749576c658e0366f5eb1aef00ac930b *man/cid_compinfo.Rd
+9b8d1f4295c2fc1d1a5aebc1b7fde807 *man/cir_query.Rd
+0a7cfd184db02b215cfa4c4329c8c5d1 *man/csid_compinfo.Rd
+4e24d86be4d8f2b90e74137e5f9a8e2c *man/csid_extcompinfo.Rd
+1aa4c53c0df2acfd7402e242f0772263 *man/cts_compinfo.Rd
+2d68fe3de02635f6278c072b01084740 *man/cts_convert.Rd
+cd56bfa9b55e7b315603c1919c42511b *man/get_cid.Rd
+90d23ae1c5d7232537dc22c453f942fe *man/get_csid.Rd
