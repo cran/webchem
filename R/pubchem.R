@@ -15,29 +15,39 @@
 #' \donttest{
 #' # might fail if API is not available
 #' get_cid('Triclosan')
+#'
+#' # multiple inputs
+#' comp <- c('Triclosan', 'Aspirin')
+#' sapply(comp, function(x) get_cid(x))
+#' sapply(comp, function(x) get_cid(x, first = TRUE))
 #' }
-get_cid <- function(query, first = FALSE, verbose = FALSE, ...){
-  if(length(query) > 1){
+get_cid <- function(query, first = FALSE, verbose = TRUE, ...){
+  if (length(query) > 1) {
     stop('Cannot handle multiple input strings.')
+  }
+  if (is.na(query)) {
+    warning('Identifier is NA... Returning NA.')
+    return(NA)
   }
   qurl <- paste("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?retmax=100000&db=pccompound&term=",
                 query, sep = "")
-  if(verbose)
-    print(qurl)
+  if (verbose)
+    message(qurl)
   Sys.sleep(0.3)
-  h <- try(xmlParse(qurl, isURL = TRUE, useInternalNodes = TRUE))
-  if(!inherits(h, "try-error")){
+  cont <- try(getURLContent(qurl, .opts = list(timeout = 3)), silent = TRUE)
+  if (!inherits(cont, "try-error")) {
+    h <- xmlParse(cont, useInternalNodes = TRUE)
     out <- rev(xpathSApply(h, "//IdList/Id", xmlValue))
   } else{
     warning('Problem with web service encountered... Returning NA.')
-    out < NA
+    return(NA)
   }
   # not found on ncbi
-  if (length(out) == 0){
+  if (length(out) == 0) {
     message("Not found. Returning NA.")
-    out <- NA
+    return(NA)
   }
-  if(first)
+  if (first)
     out <- out[1]
   names(out) <- NULL
   return(out)
@@ -45,9 +55,9 @@ get_cid <- function(query, first = FALSE, verbose = FALSE, ...){
 
 
 
-#' Convert CID to SMILES
+#' Retrieve compound information from pubchem CID
 #'
-#' Convert CompoundID (CID) to SMILES, see \url{https://pubchem.ncbi.nlm.nih.gov/}
+#' Retrieve compound information from pubchem CID, see \url{https://pubchem.ncbi.nlm.nih.gov/}
 #' @import RCurl XML
 #' @param cid character; Pubchem ID (CID).
 #' @param first logical; return only first list items?
@@ -68,18 +78,26 @@ get_cid <- function(query, first = FALSE, verbose = FALSE, ...){
 #' # might fail if API is not available
 #' cid <- get_cid('Triclosan')
 #' cid_compinfo(cid[1])
+#'
+#' ###
+#' # multiple CIDS
+#' comp <- c('Triclosan', 'Aspirin')
+#' cids <- sapply(comp, function(x) get_cid(x, first = TRUE))
+#' (ll <- lapply(cids, cid_compinfo, first = TRUE))
+#' # as mtrix
+#' do.call(rbind, ll)
 #' }
-cid_compinfo <- function(cid, first = FALSE, verbose = FALSE, ...){
-  if(length(cid) > 1){
+cid_compinfo <- function(cid, first = FALSE, verbose = TRUE, ...){
+  if (length(cid) > 1) {
     stop('Cannot handle multiple input strings.')
   }
   baseurl <- "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?retmax=100000&db=pccompound"
   qurl <- paste0(baseurl, '&ID=', cid)
-  if(verbose)
+  if (verbose)
     message(qurl)
   Sys.sleep(0.3)
-  h <- try(xmlParse(qurl, isURL = TRUE))
-  if(!inherits(h, "try-error")){
+  h <- try(xmlParse(qurl, isURL = TRUE), silent = TRUE)
+  if (!inherits(h, "try-error")) {
     CID <- xpathSApply(h, '//Id', xmlValue)
     InChIKey <-  xpathSApply(h, "//Item[@Name='InChIKey']", xmlValue)
     InChI <- xpathSApply(h, "//Item[@Name='InChI']", xmlValue)
@@ -118,15 +136,11 @@ cid_compinfo <- function(cid, first = FALSE, verbose = FALSE, ...){
                 BondChiralDefCount = BondChiralDefCount, BondChiralUndefCount = BondChiralUndefCount,
                 IsotopeAtomCount = IsotopeAtomCount, CovalentUnitCount = CovalentUnitCount,
                 TautomerCount = TautomerCount)
-    if(first)
-      out <-lapply(out, function(x) x[1])
-  } else{
-    warning('Problem with web service encountered... Returning NA.')
-    out < NA
-  }
-  if (length(out) == 0){
-    message("Not found. Returning NA.")
-    out <- NA
+    if (first)
+      out <- lapply(out, function(x) x[1])
+  } else {
+    warning('CID not found... Returning NA.')
+    return(NA)
   }
   return(out)
 }

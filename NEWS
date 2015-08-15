@@ -1,0 +1,23 @@
+webchem 0.0.2
+======================
+
+NEW FEATURES
+
+* Query the PAN Pesticides Database with pan().
+* Query Allan Woods Compendium of Pesticide Common Names
+
+MINOR IMPROVEMENTS
+
+* Added checks for user input.
+* Fixed documentation, added example for bulk processing.
+* cts_convert() returns NA if no result was found.
+* Set 'verbose = TRUE' as default for all functions.
+* Added unit tests.
+* All functions return silently NA, if API is not reachable.
+
+BUG FIXES
+
+* cts_convert() does not ignore 'first' argument.
+* get_csid() did not return NA, if there was a problem with the API.
+* Many functions returned 'NA2+' if NA was given - now return NA by default.
+* Many fixes in NA handling, e.g. when no hit was found.

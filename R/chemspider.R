@@ -27,29 +27,36 @@
 #' # attr(,"class")
 #' # [1] "csid"
 #' get_csid("3380-34-5", token = token)
+#'
+#' ###
 #' # multiple inputs
 #' sapply(c('Aspirin', 'Triclosan'), get_csid, token = token)
 #' }
 get_csid <- function(query, token = NULL, first = FALSE, verbose = TRUE,  ...){
-  if(length(query) > 1){
+  if (length(query) > 1) {
     stop('Cannot handle multiple input strings.')
+  }
+  if (is.na(query)) {
+    warning('Identifier is NA... Returning NA.')
+    return(NA)
   }
   baseurl <- 'http://www.chemspider.com/Search.asmx/SimpleSearch?'
   qurl <- paste0(baseurl, 'query=', query, '&token=', token)
-  if(verbose)
+  if (verbose)
     message(qurl, '\n')
-  h <- try(xmlParse(qurl, isURL = TRUE, useInternalNodes = TRUE))
-  if(!inherits(h, "try-error")){
+  Sys.sleep(0.1)
+  h <- try(xmlParse(qurl, isURL = TRUE, useInternalNodes = TRUE), silent = TRUE)
+  if (!inherits(h, "try-error")) {
     out <- unlist(xmlToList(h))
-  } else{
+  } else {
     warning('Problem with web service encountered... Returning NA.')
-    out < NA
+    return(NA)
   }
-  if(length(out) == 0){
-    warning('No csid found... Returning NA.')
-    out <- NA
+  if (length(out) == 0) {
+    message('No csid found... Returning NA.')
+    return(NA)
   }
-  if(first)
+  if (first)
     out <- out[1]
   names(out) <- NULL
   return(out)
@@ -81,30 +88,31 @@ get_csid <- function(query, token = NULL, first = FALSE, verbose = TRUE,  ...){
 #' # convert CAS to CSID
 #' csid <- get_csid("Triclosan", token = token)
 #' csid_compinfo(csid, token)
-#' # multiple inpits
-#' csids <- get_csid("3380-34-5", token = token)
+#'
+#' ###
+#' # multiple inputs
+#' csids <- sapply(c('Aspirin', 'Triclosan'), get_csid, token = token)
 #' # fails:
 #' # csid_compinfo(csids, token = token)
-#' lapply(csids, csid_compinfo, token = token)
+#' (ll <- lapply(csids, csid_compinfo, token = token))
+#' # return a list, convert to matrix:
+#' do.call(rbind, ll)
 #' }
 csid_compinfo <- function(csid, token, verbose = TRUE, ...){
-  if(length(csid) > 1){
+  if (length(csid) > 1) {
     stop('Cannot handle multiple input strings.')
   }
   baseurl <- 'http://www.chemspider.com/Search.asmx/GetCompoundInfo?'
   qurl <- paste0(baseurl, 'CSID=', csid, '&token=', token)
-  if(verbose)
+  if (verbose)
     message(qurl)
-  h <- try(xmlParse(qurl, isURL = TRUE))
-  if(!inherits(h, "try-error")){
+  Sys.sleep(0.1)
+  h <- try(xmlParse(qurl, isURL = TRUE), silent = TRUE)
+  if (!inherits(h, "try-error")) {
     out <- unlist(xmlToList(h))
-  } else{
-    warning('Problem with web service encountered... Returning NA.')
-    out < NA
-  }
-  if (length(out) == 0){
-    message("Not found. Returning NA.")
-    out <- NA
+  } else {
+    warning('CSID not found... Returning NA.')
+    return(NA)
   }
   return(out)
 }
@@ -125,7 +133,7 @@ csid_compinfo <- function(csid, token, verbose = TRUE, ...){
 #' \url{https://www.rsc.org/rsc-id/register}
 #' for a security token.
 #' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
-#' #' @seealso \code{\link{get_csid}} to retrieve ChemSpider IDs,
+#' @seealso \code{\link{get_csid}} to retrieve ChemSpider IDs,
 #' \code{\link{csid_compinfo}} for extended compound information.
 #' @export
 #' @examples
@@ -136,30 +144,31 @@ csid_compinfo <- function(csid, token, verbose = TRUE, ...){
 #' csid <- get_csid("Triclosan", token = token)
 #' # get SMILES from CSID
 #' csid_extcompinfo(csid, token)
+#'
+#' ###
 #' # multiple inpits
-#' csids <- get_csid("3380-34-5", token = token)
+#' csids <- sapply(c('Aspirin', 'Triclosan'), get_csid, token = token)
 #' # fails:
 #' # csid_extcompinfo(csids, token = token)
-#' lapply(csids, csid_extcompinfo, token = token)
+#' (ll <- lapply(csids, csid_extcompinfo, token = token))
+#' # to matrix
+#' do.call(rbind, ll)
 #' }
 csid_extcompinfo <- function(csid, token, verbose = TRUE, ...){
-  if(length(csid) > 1){
+  if (length(csid) > 1) {
     stop('Cannot handle multiple input strings.')
   }
   baseurl <- 'http://www.chemspider.com/MassSpecAPI.asmx/GetExtendedCompoundInfo?'
   qurl <- paste0(baseurl, 'CSID=', csid, '&token=', token)
-  if(verbose)
+  if (verbose)
     message(qurl)
-  h <- try(xmlParse(qurl, isURL = TRUE))
-  if(!inherits(h, "try-error")){
+  Sys.sleep(0.1)
+  h <- try(xmlParse(qurl, isURL = TRUE), silent = TRUE)
+  if (!inherits(h, "try-error")) {
     out <- unlist(xmlToList(h))
   } else{
-    warning('Problem with web service encountered... Returning NA.')
-    out <- NA
-  }
-  if (length(out) == 0){
-    message("Not found. Returning NA.")
-    out <- NA
+    warning('CSID not found... Returning NA.')
+    return(NA)
   }
   return(out)
 }

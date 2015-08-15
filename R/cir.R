@@ -100,35 +100,45 @@
 #' cir_query('Triclosan', 'aromatic')
 #' cir_query('Triclosan', 'xlogp2')
 #'
+#' # query multiple representations
 #' reps <- c('smiles', 'cas', 'stdinchikey', 'mw', 'formula', 'xlogp2')
 #' sapply(reps, function(x) cir_query('Triclosan', x, first = TRUE))
+#'
+#' # multiple inputs
+#' comp <- c('Triclosan', 'Aspirin')
+#' sapply(comp, function(x) cir_query(x, 'cas', first = TRUE))
+#'
 #'}
 #' @export
 cir_query <- function(identifier, representation = 'smiles', resolver = NULL,
                       first = FALSE, verbose = TRUE, ...){
-  if(length(identifier) > 1){
+  if (length(identifier) > 1) {
     stop('Cannot handle multiple input strings.')
+  }
+  if (is.na(identifier)) {
+    warning('Identifier is NA... Returning NA.')
+    return(NA)
   }
   baseurl <- "http://cactus.nci.nih.gov/chemical/structure"
   qurl <- paste(baseurl, identifier, representation, 'xml', sep = '/')
-  if(!is.null(resolver)){
+  if (!is.null(resolver)) {
     qurl <- paste0(qurl, '?resolver=', resolver)
   }
-  if(verbose)
+  if (verbose)
     message(qurl)
-  # Sys.sleep(0.1)
-  h <- try(xmlParse(qurl, isURL = TRUE))
-  if(!inherits(h, "try-error")){
+  Sys.sleep(0.1)
+  h <- try(xmlParse(qurl, isURL = TRUE), silent = TRUE)
+  if (!inherits(h, "try-error")) {
     out <- xpathSApply(h, "//data/item", xmlValue)
-  } else{
+  } else {
     warning('Problem with web service encountered... Returning NA.')
-    out < NA
-  }
-  if(length(out) == 0){
-    warning('No representation found... Returning NA.')
     out <- NA
   }
-  if(first)
+  if (length(out) == 0) {
+    message('No representation found... Returning NA.')
+    out <- NA
+  }
+  if (first)
     out <- out[1]
   return(out)
 }
