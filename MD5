@@ -1,4 +1,4 @@
-b5ac028571c5f1e3cb8752febfa0e824 *DESCRIPTION
+b9d3147e9755486b9f7d302f278f5bde *DESCRIPTION
 c96d3c8cb974147b91d76d0120d1302a *LICENSE
 1a38f573ac2f695e54d3e5b9d87c51ce *NAMESPACE
 4e9cc8a16096119b473c4e93cabfef1c *NEWS
@@ -32,11 +32,11 @@ a91aa524334fa6de28dfdc198e9ff75d *man/ppdb_buildidx.Rd
 08fc2029f2aa7333d58482f9606198d5 *man/ppdb_idx.Rd
 0b25fab009c29e018e800786e259af1d *man/ppdb_query.Rd
 a024a3dc26c4e3ca76c17d367dc02df3 *man/webchem-deprecated.Rd
-235ab586cbc76fe722a7824c134cb51d *tests/testthat.R
+6c46cd7479ed5b0398bc5efe67c43b56 *tests/testthat.R
 88c49eef30c965f273750d30512f347a *tests/testthat/test-alanwood.R
 860dd4d3b9cc7ed1d02c688c3cdc7b46 *tests/testthat/test-chemspider.R
 d64ab3672186eb1da3a7680acd255ac7 *tests/testthat/test-cir.R
-5f264340280c68019fe3239b22374068 *tests/testthat/test-cts.R
+88079d6c66ec0859d39f32ddc8e51173 *tests/testthat/test-cts.R
 cf93aee3a13c4e1f1cb00fd0393c7b36 *tests/testthat/test-etox.R
 ef2eaa8b2e40f568d2f01e0b0fafa0fc *tests/testthat/test-pan.R
 1fcebf2e872e265def9b355a0da69bf4 *tests/testthat/test-physprop.R
