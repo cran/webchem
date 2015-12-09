@@ -17,10 +17,7 @@
 #' out[1:5]
 #'
 #' ### multiple inputs
-#' comp <- c('Triclosan', 'Aspirin')
-#' inchkeys <- sapply(comp, function(x) cir_query(x, 'stdinchikey', first = TRUE))
-#' # ne to strip '#InChIKey='
-#' inchkeys <- gsub('InChIKey=', '', inchkeys)
+#' inchkeys <- c("XEFQLINVKFYRCS-UHFFFAOYSA-N","BSYNRYMUTXBXSQ-UHFFFAOYSA-N" )
 #' ll <- lapply(inchkeys, function(x) cts_compinfo(x)[1:5])
 #' do.call(rbind, ll)
 #' }
@@ -28,11 +25,14 @@ cts_compinfo <- function(inchikey, verbose = TRUE, ...){
   if (length(inchikey) > 1) {
     stop('Cannot handle multiple input strings.')
   }
+  if (!is.inchikey(inchikey)) {
+    stop('Input is not a valid inchikey!')
+  }
   baseurl <- "http://cts.fiehnlab.ucdavis.edu/service/compound"
   qurl <- paste0(baseurl, '/', inchikey)
   if (verbose)
     message(qurl)
-  Sys.sleep(0.1)
+  Sys.sleep(0.3)
   h <- try(getURL(qurl), silent = TRUE)
   if (!inherits(h, "try-error")) {
     out <- fromJSON(h)
@@ -86,7 +86,7 @@ cts_convert <- function(query, from, to, first = FALSE, verbose = TRUE, ...){
   qurl <- URLencode(qurl)
   if (verbose)
     message(qurl)
-  Sys.sleep(0.1)
+  Sys.sleep(0.3)
   h <- try(getURL(qurl), silent = TRUE)
   if (!inherits(h, "try-error")) {
     out <- fromJSON(h)
