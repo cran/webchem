@@ -1,3 +1,55 @@
+webchem 0.0.5.0
+======================
+
+NEW FEATURES
+
+* is.smiles() checks SMILES strings, by parsing via (R)CDK.
+* get_wdid() and wd_indent() to retrieve information from wikidata.
+* get_etoxid() can handle multi inputs (interactive mode, best match, first match, NA and all matches).
+* ci_query() can handle multi inputs (interactive mode, best match, first match and NA).
+* cs_prop() queries predcitions (ACD and EPiSuite) from ChemSpider
+
+MINOR IMPROVEMENTS
+
+* webchem uses exclusively xml2 (instead of XML).
+* All function return source_url for (micro-)attribution of sources
+* cs_compinfo(): names of returned list changed.
+* cs_extcompinfo():
+  - names of returned list changed
+  - result is numeric where appropriate
+* cir(): result is numeric where appropriate.
+* unified naming scheme of functions.
+* is.inchikey_cs() has been integrated into is.inchikey().
+* aw_query() returns multiple inchikey if found.
+* pan() now returns chemical name and matched synonym.
+
+BUG FIXES
+
+* utility functions are not vectorized and throw an error.
+* chemid() did mot work with inchikey as input.
+* ppdb_idx returned duplicated CAS values, which caused ppdb() to fail.
+* ppdb() failed in some cases because of false encoding.
+* etox_*() functions are more robust.
+* ci_query() failed if multi hits were found. Now returns first hit.
+* aw_fuery() failed if inchikey was not found.
+
+DEPRECATED FUNCTIONS
+
+* pan_query() replaces pan()
+* aw_query() replaces alanwood()
+* get_pcid() replaces get_cid()
+* pc_compinfo() replaces cid_compinfo()
+* ci_query() replaces chemid()
+* pp_query() replaces physprop()
+
+DEFUNCT FUNCTIONS
+
+* csid_compinfo()
+* csid_extcompinfo()
+
+
+
+
 webchem 0.0.4.0
 ======================
 

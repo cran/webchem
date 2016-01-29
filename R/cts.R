@@ -1,12 +1,16 @@
 #' Get record details from Chemical Translation Service (CTS)
 #'
 #' Get record details from CTS, see \url{http://cts.fiehnlab.ucdavis.edu}
-#' @import RCurl jsonlite
+#' @import jsonlite
+#' @importFrom stats rgamma
 #' @param inchikey character; InChIkey.
 #' @param verbose logical; should a verbose output be printed on the console?
 #' @param ... currently not used.
 #' @return a list of 7. inchikey, inchicode, molweight, exactmass, formula, synonyms and externalIds
 #' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
+#'
+#' @references Wohlgemuth, G., P. K. Haldiya, E. Willighagen, T. Kind, and O. Fiehn 2010The Chemical Translation Service
+#' -- a Web-Based Tool to Improve Standardization of Metabolomic Reports. Bioinformatics 26(20): 2647–2648.
 #' @export
 #' @examples
 #' \donttest{
@@ -22,6 +26,7 @@
 #' do.call(rbind, ll)
 #' }
 cts_compinfo <- function(inchikey, verbose = TRUE, ...){
+  # inchikey <- "XEFQLINVKFYRCS-UHFFFAOYSA-N"
   if (length(inchikey) > 1) {
     stop('Cannot handle multiple input strings.')
   }
@@ -32,26 +37,22 @@ cts_compinfo <- function(inchikey, verbose = TRUE, ...){
   qurl <- paste0(baseurl, '/', inchikey)
   if (verbose)
     message(qurl)
-  Sys.sleep(0.3)
-  h <- try(getURL(qurl), silent = TRUE)
-  if (!inherits(h, "try-error")) {
-    out <- fromJSON(h)
-  } else{
-    warning('Problem with web service encountered... Returning NA.')
-    return(NA)
-  }
-  if (length(out) == 1 && grepl('invalid', out)) {
-    message("invalid InChIKey. Returning NA.")
+  Sys.sleep( rgamma(1, shape = 15, scale = 1/10))
+  out <- try(fromJSON(qurl), silent = TRUE)
+  if (inherits(out, "try-error")) {
+    warning('Not found... Returning NA.')
     return(NA)
   }
   return(out)
 }
+
 
 #' Convert Ids using Chemical Translation Service (CTS)
 #'
 #' Convert Ids using Chemical Translation Service (CTS), see \url{http://cts.fiehnlab.ucdavis.edu/conversion/index}
 #' @import RCurl jsonlite
 #' @importFrom utils URLencode
+#' @importFrom stats rgamma
 #' @param query character; query ID.
 #' @param from character; type of query ID, e.g. \code{'Chemical Name'} , \code{'InChIKey'},
 #'  \code{'PubChem CID'}, \code{'ChemSpider'}, \code{'CAS'}.
@@ -63,6 +64,9 @@ cts_compinfo <- function(inchikey, verbose = TRUE, ...){
 #' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
 #' @details See see \url{http://cts.fiehnlab.ucdavis.edu/conversion/index}
 #' for possible values of from and to.
+#'
+#' @references Wohlgemuth, G., P. K. Haldiya, E. Willighagen, T. Kind, and O. Fiehn 2010The Chemical Translation Service
+#' -- a Web-Based Tool to Improve Standardization of Metabolomic Reports. Bioinformatics 26(20): 2647–2648.
 #' @export
 #' @examples
 #' \donttest{
@@ -86,20 +90,13 @@ cts_convert <- function(query, from, to, first = FALSE, verbose = TRUE, ...){
   qurl <- URLencode(qurl)
   if (verbose)
     message(qurl)
-  Sys.sleep(0.3)
-  h <- try(getURL(qurl), silent = TRUE)
-  if (!inherits(h, "try-error")) {
-    out <- fromJSON(h)
-  } else {
-    warning('Problem with web service encountered... Returning NA.')
+  Sys.sleep( rgamma(1, shape = 15, scale = 1/10))
+  out <- try(fromJSON(qurl), silent = TRUE)
+  if (inherits(out, "try-error")) {
+    warning('Not found... Returning NA.')
     return(NA)
   }
-  if ('error' %in% names(out)) {
-    warning('Error in query : \n', out['error'], "\n Returning NA.")
-    return(NA)
-  } else {
-    out <- out$result[[1]]
-  }
+  out <- out$result[[1]]
   if (length(out) == 0) {
     message("Not found. Returning NA.")
     return(NA)

@@ -4,10 +4,12 @@
 \alias{is.inchikey}
 \title{Check if input is a valid inchikey}
 \usage{
-is.inchikey(x, verbose = TRUE)
+is.inchikey(x, type = c("format", "chemspider"), verbose = TRUE)
 }
 \arguments{
-\item{x}{character; input string}
+\item{x}{character; input InChIKey}
+
+\item{type}{character; How should be checked? Either, by format (see above) ('format') or by ChemSpider ('chemspider').}
 
 \item{verbose}{logical; print messages during processing to console?}
 }
@@ -22,6 +24,9 @@ Inchikey must fulfill the following criteria:
 3) contain two hyphens at positions 15 and 26;
 4) 24th character (flag character) be 'S' (Standard InChI) or 'N' (non-standard)
 5) 25th character (version character) must be 'A' (currently).
+}
+\note{
+This function can handle only one SMILES string.
 }
 \examples{
 is.inchikey('BQJCRHHNABKAKU-KBQPJGBKSA-N')

@@ -1,5 +1,5 @@
 #' Query Chemical Identifier Resolver
-#' @import XML RCurl
+#' @import xml2
 #'
 #' @param identifier character; chemical identifier.
 #' @param representation character; what representation of the identifier should
@@ -20,7 +20,7 @@
 #'  CACTVS HASHISY, NSC number, PubChem SID, ZINC Code, ChemSpider ID,
 #'  ChemNavigator SID, eMolecule VID.
 #'
-#'  \code{cir()} can handle only a part of all possible conversions of CIR.
+#'  \code{cir_query()} can handle only a part of all possible conversions of CIR.
 #'  Possible \code{representations} are:
 #'  \itemize{
 #'      \item \code{'smiles'}(SMILES strings),
@@ -94,23 +94,23 @@
 #' @examples
 #' \donttest{
 #' # might fail if API is not available
-#' cir('Triclosan', 'cas')
-#' cir("3380-34-5", 'cas')
-#' cir("3380-34-5", 'cas', resolver = 'cas_number')
-#' cir("3380-34-5", 'smiles')
-#' cir('Triclosan', 'mw')
+#' cir_query('Triclosan', 'cas')
+#' cir_query("3380-34-5", 'cas')
+#' cir_query("3380-34-5", 'cas', resolver = 'cas_number')
+#' cir_query("3380-34-5", 'smiles')
+#' cir_query('Triclosan', 'mw')
 #'
 #' # query multiple representations
 #' reps <- c('smiles', 'cas')
-#' sapply(reps, function(x) cir('Triclosan', x, first = TRUE))
+#' sapply(reps, function(x) cir_query('Triclosan', x, first = TRUE))
 #'
 #' # multiple inputs
 #' comp <- c('Triclosan', 'Aspirin')
-#' sapply(comp, function(x) cir(x, 'cas', first = TRUE))
+#' sapply(comp, function(x) cir_query(x, 'cas', first = TRUE))
 #'
 #'}
 #' @export
-cir <- function(identifier, representation = 'smiles', resolver = NULL,
+cir_query <- function(identifier, representation = 'smiles', resolver = NULL,
                       first = FALSE, verbose = TRUE, ...){
   if (length(identifier) > 1) {
     stop('Cannot handle multiple input strings.')
@@ -119,27 +119,37 @@ cir <- function(identifier, representation = 'smiles', resolver = NULL,
     warning('Identifier is NA... Returning NA.')
     return(NA)
   }
-  baseurl <- "http://cactus.nci.nih.gov/chemical/structure"
+  baseurl <- "https://cactus.nci.nih.gov/chemical/structure"
   qurl <- paste(baseurl, identifier, representation, 'xml', sep = '/')
   if (!is.null(resolver)) {
     qurl <- paste0(qurl, '?resolver=', resolver)
   }
   if (verbose)
     message(qurl)
-  Sys.sleep(1.5)
-  hh <- try(getURL(qurl, .opts = list(timeout = 2)))
-  if (!inherits(hh, "try-error")) {
-    h <- xmlParse(hh)
-    out <- xpathSApply(h, "//data/item", xmlValue)
-  } else {
+  Sys.sleep(3)
+  h <- try(GET(qurl, timeout(2)))
+  if (inherits(h, "try-error")) {
     warning('Problem with web service encountered... Returning NA.')
-    out <- NA
+    return(NA)
+  } else {
+    tt <- read_xml(content(h, as = 'raw'))
+    out <- xml_text(xml_find_all(tt, '//item'))
   }
   if (length(out) == 0) {
     message('No representation found... Returning NA.')
-    out <- NA
+    return(NA)
   }
   if (first)
     out <- out[1]
+
+  # convert to numeric
+  if (representation %in% c('mw', 'monoisotopic_mass', 'h_bond_donor_count',
+                           'h_bond_acceptor_count', 'h_bond_center_count',
+                           'rule_of_5_violation_count', 'rotor_count',
+                           'effective_rotor_count', 'ring_count', 'ringsys_count',
+                           'xlogp2', 'heteroatom_count', 'hydrogen_atom_count',
+                           'heavy_atom_count', 'deprotonable_group_count',
+                           'protonable_group_count') )
+    out <- as.numeric(out)
   return(out)
 }

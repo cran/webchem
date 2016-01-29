@@ -8,9 +8,12 @@
 #' 4) 24th character (flag character) be 'S' (Standard InChI) or 'N' (non-standard)
 #' 5) 25th character (version character) must be 'A' (currently).
 #'
-#' @param x character; input string
+#' @param x character; input InChIKey
+#' @param type character; How should be checked? Either, by format (see above) ('format') or by ChemSpider ('chemspider').
 #' @param verbose logical; print messages during processing to console?
 #' @return a logical
+#'
+#' @note This function can handle only one SMILES string.
 #'
 #' @references Heller, Stephen R., et al. "InChI, the IUPAC International Chemical Identifier." Journal of Cheminformatics 7.1 (2015): 23.
 #'
@@ -24,48 +27,128 @@
 #' is.inchikey('BQJCRHHNABKAKU/KBQPJGBKSA/N')
 #' is.inchikey('BQJCRHHNABKAKU-KBQPJGBKXA-N')
 #' is.inchikey('BQJCRHHNABKAKU-KBQPJGBKSB-N')
-is.inchikey = function(x, verbose = TRUE) {
+is.inchikey = function(x, type = c('format', 'chemspider'), verbose = TRUE) {
   # x <- 'BQJCRHHNABKAKU-KBQPJGBKSA-N'
+  if (length(x) > 1) {
+    stop('Cannot handle multiple input strings.')
+  }
+
+  type <- match.arg(type)
+  out <- switch(type,
+                format = is.inchikey_format(x, verbose = verbose),
+                chemspider = is.inchikey_cs(x, verbose = verbose))
+  return(out)
+}
+
+
+#' Check if input is a valid inchikey using ChemSpider API
+#'
+#' @param x character; input string
+#' @param verbose logical; print messages during processing to console?
+#' @return a logical
+#'
+#' @seealso \code{\link{is.inchikey}} for a pure-R implementation.
+#' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
+#' @export
+#' @examples
+#' \donttest{
+#' # might fail if API is not available
+#' is.inchikey_cs('BQJCRHHNABKAKU-KBQPJGBKSA-N')
+#' is.inchikey_cs('BQJCRHHNABKAKU-KBQPJGBKSA')
+#' is.inchikey_cs('BQJCRHHNABKAKU-KBQPJGBKSA-5')
+#' is.inchikey_cs('BQJCRHHNABKAKU-KBQPJGBKSA-n')
+#' is.inchikey_cs('BQJCRHHNABKAKU/KBQPJGBKSA/N')
+#' is.inchikey_cs('BQJCRHHNABKAKU-KBQPJGBKXA-N')
+#' is.inchikey_cs('BQJCRHHNABKAKU-KBQPJGBKSB-N')
+#' }
+is.inchikey_cs <- function(x, verbose = TRUE){
+  # x <- 'BQJCRHHNABKAKU-KBQPJGBKSA'
+  if (length(x) > 1) {
+    stop('Cannot handle multiple input strings.')
+  }
+  baseurl <- 'http://www.chemspider.com/InChI.asmx/IsValidInChIKey?'
+  qurl <- paste0(baseurl, 'inchi_key=', x)
+  if (verbose)
+    message(qurl)
+  Sys.sleep(0.1)
+  h <- try(read_xml(qurl), silent = TRUE)
+  if (inherits(h, "try-error")) {
+    warning('Problem with webservice... Returning NA.')
+    out <- NA
+  } else {
+    out <- as.logical(xml_text(h))
+  }
+  return(out)
+}
+
+
+
+#' Check if input is a valid inchikey using format
+#'
+#' @description  Inchikey must fulfill the following criteria:
+#' 1) consist of 27 characters;
+#' 2) be all uppercase, all letters (no numbers);
+#' 3) contain two hyphens at positions 15 and 26;
+#' 4) 24th character (flag character) be 'S' (Standard InChI) or 'N' (non-standard)
+#' 5) 25th character (version character) must be 'A' (currently).
+#'
+#' @param x character; input string
+#' @param verbose logical; print messages during processing to console?
+#' @return a logical
+#'
+#' @seealso \code{\link{is.inchikey}} for a pure-R implementation.
+#' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
+#' @export
+#' @examples
+#' \donttest{
+#' # might fail if API is not available
+#' is.inchikey_format('BQJCRHHNABKAKU-KBQPJGBKSA-N')
+#' is.inchikey_format('BQJCRHHNABKAKU-KBQPJGBKSA')
+#' is.inchikey_format('BQJCRHHNABKAKU-KBQPJGBKSA-5')
+#' is.inchikey_format('BQJCRHHNABKAKU-KBQPJGBKSA-n')
+#' is.inchikey_format('BQJCRHHNABKAKU/KBQPJGBKSA/N')
+#' is.inchikey_format('BQJCRHHNABKAKU-KBQPJGBKXA-N')
+#' is.inchikey_format('BQJCRHHNABKAKU-KBQPJGBKSB-N')
+#' }
+is.inchikey_format = function(x, verbose = TRUE) {
+  # x <- 'BQJCRHHNABKAKU-KBQPJGBKSA-N'
+  if (length(x) > 1) {
+    stop('Cannot handle multiple input strings.')
+  }
   nch <- nchar(x)
   if (nch != 27) {
     if (verbose)
       message('Not 27 characters long.')
     return(FALSE)
   }
-
   let <- strsplit(x, split = '')[[1]]
   if (any(grepl("[[:digit:]]", let))) {
     if (verbose)
       message('strings contains numbers.')
     return(FALSE)
   }
-
   if (x != toupper(x)) {
     if (verbose)
       message('Not all character uppercase.')
     return(FALSE)
   }
-
   if (substr(x, 15, 15) != "-" | substr(x, 26, 26) != "-") {
     if (verbose)
       message('Hyphens not at position 15 and 26.')
     return(FALSE)
   }
-
   f <- substr(x, 24, 24)
   if (f != 'S' & f != 'N') {
     if (verbose)
       message("Flag character not 'S' or 'N'.")
     return(FALSE)
   }
-
   f <- substr(x, 25, 25)
   if (f != 'A') {
     if (verbose)
       message("Version character not 'A'.")
     return(FALSE)
   }
-
   return(TRUE)
 }
 
@@ -81,9 +164,11 @@ is.inchikey = function(x, verbose = TRUE) {
 #' The modulo 10 of the sum of these is the checksum.
 #'
 #' @import stringr
-#' @param x character; input strin
+#' @param x character; input CAS
 #' @param verbose logical; print messages during processing to console?
 #' @return a logical
+#'
+#' @note This function can handle only one SMILES string.
 #'
 #' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
 #'
@@ -95,8 +180,11 @@ is.inchikey = function(x, verbose = TRUE) {
 #' is.cas('64-177-6')
 #' is.cas('64-17-55')
 #' is.cas('64-17-6')
-is.cas = function(x, verbose = TRUE) {
+is.cas <-  function(x, verbose = TRUE) {
   # x <- '64-17-5'
+  if (length(x) > 1) {
+    stop('Cannot handle multiple input strings.')
+  }
 
   # cas must have two hyphens
   nsep <- str_count(x, '-')
@@ -143,6 +231,41 @@ is.cas = function(x, verbose = TRUE) {
 }
 
 
+#' Check if input is a SMILES string
+#'
+#' @description This function checks if a string is a valid SMILES by checking if (R)CDK can parse it.
+#' If it cannot be parsed by rcdk FALSE is returned, else TRUE.
+#'
+#' @import rcdk
+#'
+#' @param x character; input SMILES.
+#' @param verbose logical; print messages during processing to console?
+#' @return a logical
+#'
+#' @note This function can handle only one SMILES string.
+#'
+#' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
+#'
+#' @references Egon Willighagen (2015). How to test SMILES strings in Supplementary Information.
+#' \url{https://chem-bla-ics.blogspot.nl/2015/10/how-to-test-smiles-strings-in.html}
+#'
+#' @export
+#' @examples
+#' is.smiles('Clc(c(Cl)c(Cl)c1C(=O)O)c(Cl)c1Cl')
+#' is.smiles('Clc(c(Cl)c(Cl)c1C(=O)O)c(Cl)c1ClJ')
+is.smiles <- function(x, verbose = TRUE) {
+  # x <- 'Clc(c(Cl)c(Cl)c1C(=O)O)c(Cl)c1Cl'
+  if (length(x) > 1) {
+    stop('Cannot handle multiple input strings.')
+  }
+  out <- try(parse.smiles(x), silent = TRUE)
+  if (inherits(out, 'try-error')) {
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
+
 
 #' Extract a number from a string
 #' @param x character; input string
@@ -151,6 +274,8 @@ is.cas = function(x, verbose = TRUE) {
 #' @examples
 #' extr_num('aaaa -95')
 extr_num <- function(x) {
+  if (length(x) == 0)
+    return(NA)
   as.numeric(gsub("[^0-9\\-]+", "", x))
 }
 
@@ -158,7 +283,7 @@ extr_num <- function(x) {
 #' Parse Molfile (as returned by chemspider) into a R-object.
 #'
 #' @param string molfile as one string
-#' @return A list with of four entries: header (h), counts line (cl), atom block (ab) and bond block (bb).
+#' @return A list with of four entries: header (eh), counts line (cl), atom block (ab) and bond block (bb).
 #' header: a = number of atoms, b = number of bonds, l = number of atom lists, f = obsolete,
 #' c = chiral flag (0=not chiral, 1 = chiral), s = number of stext entries, x, r, p, i = obsolete,
 #' m = 999, v0 version
@@ -201,5 +326,5 @@ parse_mol <- function(string) {
   bb <- m[(5 + na):(4 + na + nb)]
   bb <- read.table(text = bb)
   names(bb) <- c('1', '2', 't', 's', 'x', 'r', 'c')
-  return(list(h = h, cl = cl, ab = ab, bb = bb))
+  return(list(eh = h, cl = cl, ab = ab, bb = bb))
 }

@@ -1,5 +1,6 @@
 context("cir")
 
+require(RCurl)
 chk_cir <- function(){
   qurl <- 'http://cactus.nci.nih.gov/chemical/structure/Triclosan/cas/xml'
   Sys.sleep(1)
@@ -9,17 +10,17 @@ chk_cir <- function(){
     skip("Server is down!")
 }
 
-test_that("cir()", {
+test_that("cir_query()", {
   chk_cir()
 
-  expect_equal(cir('Triclosan', 'mw', verbose = FALSE), '289.5451')
-  expect_error(cir(c('Triclosan', 'Benzol'), 'mw'))
-  expect_equal(cir('xxxxxxx', 'mw', verbose = FALSE), NA)
-  expect_warning(cir(NA, 'mw', verbose = FALSE))
+  expect_equal(cir_query('Triclosan', 'mw', verbose = FALSE), 289.5451)
+  expect_error(cir_query(c('Triclosan', 'Benzol'), 'mw'))
+  expect_equal(cir_query('xxxxxxx', 'mw', verbose = FALSE), NA)
+  expect_warning(cir_query(NA, 'mw', verbose = FALSE))
   chk_cir()
-  expect_equal(cir("3380-34-5", 'stdinchikey', resolver = 'cas_number', verbose = FALSE), "InChIKey=XEFQLINVKFYRCS-UHFFFAOYSA-N")
+  expect_equal(cir_query("3380-34-5", 'stdinchikey', resolver = 'cas_number', verbose = FALSE), "InChIKey=XEFQLINVKFYRCS-UHFFFAOYSA-N")
   chk_cir()
-  expect_true(length(cir('Triclosan', 'cas', verbose = FALSE)) > 1)
+  expect_true(length(cir_query('Triclosan', 'cas', verbose = FALSE)) > 1)
   chk_cir()
-  expect_equal(length(cir('Triclosan', 'cas', first = TRUE, verbose = FALSE)), 1)
+  expect_equal(length(cir_query('Triclosan', 'cas', first = TRUE, verbose = FALSE)), 1)
 })

@@ -12,19 +12,19 @@ etox_targets(id, verbose = TRUE)
 \item{verbose}{logical; print message during processing to console?}
 }
 \value{
-A data.frame with quality targets from the ETOX database.
+A list of two: \code{res} a data.frame with quality targets from the ETOX database, and source_url.
 }
 \description{
 Query ETOX: Information System Ecotoxicology and Environmental Quality Targets
-\url{http://webetox.uba.de/webETOX/index.do} for quality targets
+\url{https://webetox.uba.de/webETOX/index.do} for quality targets
 }
 \note{
 Before using this function, please read the disclaimer
-\url{http://webetox.uba.de/webETOX/disclaimer.do}.
+\url{https://webetox.uba.de/webETOX/disclaimer.do}.
 }
 \examples{
 \dontrun{
-id <- get_etoxid('Triclosan')
+id <- get_etoxid('Triclosan', mult = 'best')
 out <- etox_targets(id)
 out[ , c('Substance', 'CAS_NO', 'Country_or_Region', 'Designation',
 'Value_Target_LR', 'Unit')]

@@ -6,32 +6,29 @@
 #' extrapolated and estimated values. For more information
 #' see \url{http://www.srcinc.com/what-we-do/environmental/scientific-databases.html#physprop}.
 #'
-#' @import XML RCurl
+#' @import xml2 httr
+#' @importFrom stats rgamma
 #'
 #' @param cas character; A CAS number to query.
 #' @param verbose logical; print message during processing to console?
 #'
-#' @return A list of 4 entries: cas (CAS-Number), cname (Chemical Name),
-#' mw (Molecular weigth) and prop (Properties).
+#' @return A list of 5 entries: cas (CAS-Number), cname (Chemical Name),
+#' mw (Molecular weigth), prop (Properties) and source url.
 #' prop is a data.frame, with variables, value, unit, temp, type (see note) and ref (see note).
 #'
 #' @note Abbreviations in the 'Type' field: EXP = Experimental Data,
-#' EST = Estimated Data, EXT = Extrapolated Data. Extrapolated data is based
-#' upon experimental measurement outside the temperature range of the reported value.
-#' References below are abbreviated citations ...
-#' the full reference citations are NOT available here.
-#' References for Estimated data generally refer to the method used to make the estimate ...
-#' most estimates were made using SRC software.
+#' EST = Estimated Data, EXT = Extrapolated Data.
+#' Please respect the terms of use: \url{http://www.srcinc.com/terms-of-use.html}.
 #'
 #' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
 #' @export
 #' @examples
 #' \dontrun{
-#' physprop('50-00-0')
-#' lapply(c('50-00-0', '79622-59-6', 'xxxxx'), physprop)
+#' pp_query('50-00-0')
+#' lapply(c('50-00-0', '79622-59-6', 'xxxxx'), pp_query)
 #' }
 
-physprop <- function(cas, verbose = TRUE){
+pp_query <- function(cas, verbose = TRUE){
   if (length(cas) > 1) {
     stop('Cannot handle multiple input strings.')
   }
@@ -42,75 +39,72 @@ physprop <- function(cas, verbose = TRUE){
   qurl <- paste0(baseurl, query)
   if (verbose)
     message('Querying ', qurl)
-
-  # the server seems down from time to time - catch this problem (allow 2 seconds to connect)
-  cont <- try(
-    getURL(qurl, .encoding = 'UTF-8', .opts = list(timeout = 3, ssl.verifypeer = FALSE, ssl.verifyhost = FALSE)),
-              silent = TRUE)
-  if (inherits(cont, 'try-error')) {
-    warning('Web server seems to be down! \n Returning NA.')
+  Sys.sleep( rgamma(1, shape = 15, scale = 1/10))
+  ttt <- try(
+    read_html(
+      content(
+        GET(qurl, config = config( ssl_verifypeer = 0L, ssl_verifyhost = 0L)),
+        as = 'text'
+        ), encoding = "UTF-8"), silent = TRUE)
+  if (inherits(ttt, 'try-error')) {
+    warning('Cannot retrive data from server. \n Returning NA.')
     return(NA)
   }
-  ttt <- htmlParse(cont, useInternalNodes = TRUE,
-                   encoding = "UTF-8")
-  Sys.sleep(0.1)
 
-  if (grepl('No records', xpathSApply(ttt, '//p', xmlValue)[3])) {
+  if (grepl('No records', xml_text(xml_find_all(ttt, '//p'))[3])) {
     message('Not found! Returning NA.\n')
     return(NA)
   }
 
-  variables <- xpathSApply(ttt, '//ul/following-sibling::text()[1]', xmlValue)
+  variables <- xml_text(xml_find_all(ttt, '//ul/following-sibling::text()[1]'))
   variables <- gsub(':', '', variables)
 
-  prop <- do.call(rbind, xpathApply(ttt, '//ul[@class!="ph"]', function(node){
-    value_var <- xpathSApply(node, './li[starts-with(text(),"Value")]', xmlValue)
+  nd <- xml_find_all(ttt, '//ul[@class!="ph"]')
+  prop <- data.frame(t(sapply(nd, function(y) {
+    value_var <- xml_text(xml_find_all(y, './li[starts-with(text(),"Value")]'))
     value_var <- gsub('Value.:.(.*)', '\\1', value_var)
     value <- gsub('^(\\d*\\.?\\d*).*', '\\1', value_var)
     unit <- gsub('^\\d*\\.?\\d*.(.*)', '\\1', value_var)
-    temp <- xpathSApply(node, './li[starts-with(text(),"Temp")]', xmlValue)
+    temp <- xml_text(xml_find_all(y, './li[starts-with(text(),"Temp")]'))
+    temp <- gsub('Temp.*:.(.*)', '\\1', temp)
     if (length(temp) == 0) {
       temp <- NA
-    } else {
-      temp <- gsub('Temp.*:.(.*)', '\\1', temp)
     }
-    type <- xpathSApply(node, './li[starts-with(text(),"Type")]', xmlValue)
+    type <- xml_text(xml_find_all(y,  './li[starts-with(text(),"Type")]'))
+    type <- gsub('Type.*:.(.*)', '\\1', type)
     if (length(type) == 0) {
       type <- NA
-    } else {
-      type <- gsub('Type.*:.(.*)', '\\1', type)
     }
-    ref <- xpathSApply(node, './li[starts-with(text(),"Ref")]', xmlValue)
+    ref <- xml_text(xml_find_all(y, './li[starts-with(text(),"Ref")]'))
+    ref <- gsub('Ref.*:.(.*)', '\\1', ref)
     if (length(ref) == 0) {
       ref <- NA
-    } else {
-      ref <- gsub('Ref.*:.(.*)', '\\1', ref)
     }
-    out <- data.frame(value, unit, temp, type, ref, stringsAsFactors = FALSE)
-    return(out)
-  }))
+    c(value, unit, temp, type, ref)
+  })), stringsAsFactors = FALSE)
+  names(prop) <- c("value", "unit", "temp", "type", "ref")
   prop$variable <- variables
   prop <- prop[, c("variable", "value", "unit", "temp", "type", "ref")]
   prop[ , 'value'] <-  as.numeric(prop[ , 'value'])
 
-  cas <- xpathApply(ttt, '//ul[@class="ph"]/li[starts-with(text(),"CAS")]',xmlValue)[[1]]
+  cas <- xml_text(xml_find_all(ttt, '//ul[@class="ph"]/li[starts-with(text(),"CAS")]'))
   cas <- sub(".*:.", "", cas)
   cas <- sub("^[0]+", "", cas)
 
-  cname <- xpathApply(ttt, '//ul[@class="ph"]/li[starts-with(text(),"Chem")]',xmlValue)[[1]]
+  cname <- xml_text(xml_find_all(ttt, '//ul[@class="ph"]/li[starts-with(text(),"Chem")]'))
   cname <- sub(".*:.", "", cname)
 
-  mw <- xpathApply(ttt, "//ul[@class='ph']/li[4]",xmlValue)[[1]]
+  mw <- xml_text(xml_find_all(ttt, "//ul[@class='ph']/li[4]"))
   mw <- as.numeric(sub(".*:.", "", mw))
 
-  mp <- xpathApply(ttt, "//ul[@class='ph']/li[5]",xmlValue)[[1]]
+  mp <- xml_text(xml_find_all(ttt, "//ul[@class='ph']/li[5]"))
   prop <- rbind(prop, data.frame(variable = 'Melting Point',
                                  value = extr_num(mp),
                                  unit = 'deg C',
                                  temp = NA,
                                  type = NA,
                                  ref = NA))
-  bp <- xpathApply(ttt, "//ul[@class='ph']/li[6]",xmlValue)[[1]]
+  bp <- xml_text(xml_find_all(ttt, "//ul[@class='ph']/li[6]"))
   prop <- rbind(prop, data.frame(variable = 'Boiling Point',
                                  value = extr_num(bp),
                                  unit = 'deg C',
@@ -118,7 +112,7 @@ physprop <- function(cas, verbose = TRUE){
                                  type = NA,
                                  ref = NA))
 
-  out <- list(cas = cas, cname = cname, mw = mw, prop = prop)
+  out <- list(cas = cas, cname = cname, mw = mw, prop = prop, source_url = qurl)
   return(out)
 }
 
