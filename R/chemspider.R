@@ -1,6 +1,6 @@
 #' Retrieve ChemSpider ID
 #'
-#' Return Chemspider ID (CSID) for a search query, see \url{http://www.chemspider.com/}.
+#' Return Chemspider ID (CSID) for a search query, see \url{https://www.chemspider.com/}.
 #' @import xml2
 #' @importFrom stats rgamma
 #'
@@ -14,7 +14,7 @@
 #' @note A security token is neeeded. Please register at RSC.
 #' \url{https://www.rsc.org/rsc-id/register}
 #' for a security token.
-#' Please respect the Terms & conditions \url{http://www.rsc.org/help-legal/legal/terms-conditions/}.
+#' Please respect the Terms & conditions \url{https://www.rsc.org/help-legal/legal/terms-conditions/}.
 #'
 #' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
 #' @seealso \code{\link{cs_compinfo}} and \code{\link{cs_extcompinfo}} to
@@ -33,11 +33,11 @@ get_csid <- function(query, token = NULL, first = TRUE, verbose = TRUE,  ...){
   foo <- function(query, token, first, verbose, ...){
     if (is.na(query))
       return(NA)
-    baseurl <- 'http://www.chemspider.com/Search.asmx/SimpleSearch?'
+    baseurl <- 'https://www.chemspider.com/Search.asmx/SimpleSearch?'
     qurl <- paste0(baseurl, 'query=', query, '&token=', token)
     if (verbose)
       message(qurl, '\n')
-    Sys.sleep( rgamma(1, shape = 15, scale = 1/10))
+    Sys.sleep( rgamma(1, shape = 15, scale = 1/45))
     h <- try(read_xml(qurl), silent = TRUE)
     if (inherits(h, "try-error")) {
       warning('Problem with web service encountered... Returning NA.')
@@ -64,7 +64,7 @@ get_csid <- function(query, token = NULL, first = TRUE, verbose = TRUE,  ...){
 
 #' Get record details (CSID, StdInChIKey, StdInChI, SMILES) by ChemSpider ID
 #'
-#' Get record details from ChemspiderId (CSID), see \url{http://www.chemspider.com/}
+#' Get record details from ChemspiderId (CSID), see \url{https://www.chemspider.com/}
 #' @import xml2
 #' @importFrom stats rgamma
 #'
@@ -78,7 +78,7 @@ get_csid <- function(query, token = NULL, first = TRUE, verbose = TRUE,  ...){
 #' @note A security token is neeeded. Please register at RSC
 #' \url{https://www.rsc.org/rsc-id/register}
 #' for a security token.
-#' Please respect the Terms & conditions \url{http://www.rsc.org/help-legal/legal/terms-conditions/}.
+#' Please respect the Terms & conditions \url{https://www.rsc.org/help-legal/legal/terms-conditions/}.
 #' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
 #' @seealso \code{\link{get_csid}} to retrieve ChemSpider IDs,
 #' \code{\link{cs_extcompinfo}} for extended compound information.
@@ -100,11 +100,11 @@ cs_compinfo <- function(csid, token, verbose = TRUE, ...){
     if (is.na(csid)) {
       return(list(csid = NA, inchi = NA, inchikey = NA, smiles = NA, source_url = NA))
     }
-    baseurl <- 'http://www.chemspider.com/Search.asmx/GetCompoundInfo?'
+    baseurl <- 'https://www.chemspider.com/Search.asmx/GetCompoundInfo?'
     qurl <- paste0(baseurl, 'CSID=', csid, '&token=', token)
     if (verbose)
       message(qurl)
-    Sys.sleep( rgamma(1, shape = 5, scale = 1/10))
+    Sys.sleep( rgamma(1, shape = 15, scale = 1/45))
     h <- try(read_xml(qurl), silent = TRUE)
     if (inherits(h, "try-error")) {
       warning('CSID not found... Returning NA.')
@@ -112,7 +112,7 @@ cs_compinfo <- function(csid, token, verbose = TRUE, ...){
     }
     out <- as.list(xml_text(xml_children(h)))
     names(out) <- c('csid', 'inchi', 'inchikey', 'smiles')
-    source_url <- paste0('http://www.chemspider.com/Chemical-Structure.', csid, '.html')
+    source_url <- paste0('https://www.chemspider.com/Chemical-Structure.', csid, '.html')
     out[['source_url']] <- source_url
     return(out)
   }
@@ -128,7 +128,7 @@ cs_compinfo <- function(csid, token, verbose = TRUE, ...){
 
 #' Get extended record details by ChemSpider ID
 #'
-#' Get extended info from Chemspider, see \url{http://www.chemspider.com/}
+#' Get extended info from Chemspider, see \url{https://www.chemspider.com/}
 #' @import xml2
 #' @importFrom stats rgamma
 #' @param csid character,  ChemSpider ID.
@@ -141,7 +141,7 @@ cs_compinfo <- function(csid, token, verbose = TRUE, ...){
 #' @note A security token is neeeded. Please register at RSC
 #' \url{https://www.rsc.org/rsc-id/register}
 #' for a security token.
-#' Please respect the Terms & conditions \url{http://www.rsc.org/help-legal/legal/terms-conditions/}.
+#' Please respect the Terms & conditions \url{https://www.rsc.org/help-legal/legal/terms-conditions/}.
 #' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
 #' @seealso \code{\link{get_csid}} to retrieve ChemSpider IDs,
 #' \code{\link{cs_compinfo}} for extended compound information.
@@ -167,11 +167,11 @@ cs_extcompinfo <- function(csid, token, verbose = TRUE, ...){
                       'mw', 'monoiso_mass', 'nominal_mass', 'alogp', 'xlogp', 'common_name', 'source_url')
       return(out)
     }
-    baseurl <- 'http://www.chemspider.com/MassSpecAPI.asmx/GetExtendedCompoundInfo?'
+    baseurl <- 'https://www.chemspider.com/MassSpecAPI.asmx/GetExtendedCompoundInfo?'
     qurl <- paste0(baseurl, 'CSID=', csid, '&token=', token)
     if (verbose)
       message(qurl)
-    Sys.sleep( rgamma(1, shape = 5, scale = 1/10))
+    Sys.sleep( rgamma(1, shape = 15, scale = 1/45))
     h <- try(read_xml(qurl), silent = TRUE)
     if (inherits(h, "try-error")) {
       warning('CSID not found... Returning NA.')
@@ -187,7 +187,7 @@ cs_extcompinfo <- function(csid, token, verbose = TRUE, ...){
     out[['nominal_mass']] <- as.numeric(out[['nominal_mass']])
     out[['alogp']] <- as.numeric(out[['alogp']])
     out[['xlogp']] <- as.numeric(out[['xlogp']])
-    source_url <- paste0('http://www.chemspider.com/Chemical-Structure.', csid, '.html')
+    source_url <- paste0('https://www.chemspider.com/Chemical-Structure.', csid, '.html')
     out[['source_url']] <- source_url
     return(out)
   }
@@ -202,7 +202,7 @@ cs_extcompinfo <- function(csid, token, verbose = TRUE, ...){
 #' Get predicted chemical properties from ChemSpider
 #'
 #' Get predicted (ACD/Labs and EPISuite) chemical properties from ChemSpider,
-#' see \url{http://www.chemspider.com/}
+#' see \url{https://www.chemspider.com/}
 #' @import xml2 stringr
 #' @importFrom stats rgamma
 #'
@@ -212,7 +212,7 @@ cs_extcompinfo <- function(csid, token, verbose = TRUE, ...){
 #'
 #' @return A list of lists with of three: acd (data.frame), epi (data.frame) and source_url.
 #'
-#' @note Please respect the Terms & conditions \url{http://www.rsc.org/help-legal/legal/terms-conditions/}.
+#' @note Please respect the Terms & conditions \url{https://www.rsc.org/help-legal/legal/terms-conditions/}.
 #' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
 #' @seealso \code{\link{get_csid}} to retrieve ChemSpider IDs,
 #' \code{\link{cs_compinfo}} for extended compound information.
@@ -230,10 +230,10 @@ cs_extcompinfo <- function(csid, token, verbose = TRUE, ...){
 #' }
 cs_prop <- function(csid, verbose = TRUE, ...){
   foo <- function(csid, verbose){
-    qurl <- paste0('http://www.chemspider.com/Chemical-Structure.', csid, '.html')
+    qurl <- paste0('https://www.chemspider.com/Chemical-Structure.', csid, '.html')
     if (verbose)
       message(qurl)
-    Sys.sleep( rgamma(1, shape = 5, scale = 1/10))
+    Sys.sleep( rgamma(1, shape = 10, scale = 1/10))
     h <- try(read_html(qurl), silent = TRUE)
     if (inherits(h, "try-error")) {
       warning('CSID not found... Returning NA.')
@@ -455,11 +455,11 @@ cs_csid_mol <- function(csid, token, parse = TRUE, verbose = TRUE, ...){
   if (length(csid) > 1) {
     stop('Cannot handle multiple input strings.')
   }
-  baseurl <- 'http://www.chemspider.com/InChI.asmx/CSIDToMol?'
+  baseurl <- 'https://www.chemspider.com/InChI.asmx/CSIDToMol?'
   qurl <- paste0(baseurl, 'csid=', csid, '&token=', token)
   if (verbose)
     message(qurl)
-  Sys.sleep( rgamma(1, shape = 5, scale = 1/10))
+  Sys.sleep( rgamma(1, shape = 15, scale = 1/45))
   h <- try(read_xml(qurl), silent = TRUE)
   if (inherits(h, "try-error")) {
     warning('CSID not found... Returning NA.')
@@ -503,11 +503,11 @@ cs_inchikey_csid <- function(inchikey, verbose = TRUE, ...){
   if (length(inchikey) > 1) {
     stop('Cannot handle multiple input strings.')
   }
-  baseurl <- 'http://www.chemspider.com/InChI.asmx/InChIKeyToCSID?'
+  baseurl <- 'https://www.chemspider.com/InChI.asmx/InChIKeyToCSID?'
   qurl <- paste0(baseurl, 'inchi_key=', inchikey)
   if (verbose)
     message(qurl)
-  Sys.sleep( rgamma(1, shape = 5, scale = 1/10))
+  Sys.sleep( rgamma(1, shape = 15, scale = 1/45))
   h <- try(read_xml(qurl), silent = TRUE)
   if (inherits(h, "try-error")) {
     warning('inchikey not found... Returning NA.')
@@ -546,11 +546,11 @@ cs_inchikey_inchi <- function(inchikey, verbose = TRUE, ...){
   if (length(inchikey) > 1) {
     stop('Cannot handle multiple input strings.')
   }
-  baseurl <- 'http://www.chemspider.com/InChI.asmx/InChIKeyToInChI?'
+  baseurl <- 'https://www.chemspider.com/InChI.asmx/InChIKeyToInChI?'
   qurl <- paste0(baseurl, 'inchi_key=', inchikey)
   if (verbose)
     message(qurl)
-  Sys.sleep( rgamma(1, shape = 5, scale = 1/10))
+  Sys.sleep( rgamma(1, shape = 15, scale = 1/45))
   h <- try(read_xml(qurl), silent = TRUE)
   if (inherits(h, "try-error")) {
     warning('inchikey not found... Returning NA.')
@@ -590,11 +590,11 @@ cs_inchikey_mol <- function(inchikey, parse = TRUE, verbose = TRUE, ...){
   if (length(inchikey) > 1) {
     stop('Cannot handle multiple input strings.')
   }
-  baseurl <- 'http://www.chemspider.com/InChI.asmx/InChIKeyToMol?'
+  baseurl <- 'https://www.chemspider.com/InChI.asmx/InChIKeyToMol?'
   qurl <- paste0(baseurl, 'inchi_key=', inchikey)
   if (verbose)
     message(qurl)
-  Sys.sleep( rgamma(1, shape = 5, scale = 1/10))
+  Sys.sleep( rgamma(1, shape = 15, scale = 1/45))
   h <- try(read_xml(qurl), silent = TRUE)
   if (inherits(h, "try-error")) {
     warning('inchikey not found... Returning NA.')
@@ -637,10 +637,10 @@ cs_inchi_csid <- function(inchi, verbose = TRUE, ...){
   if (length(inchi) > 1) {
     stop('Cannot handle multiple input strings.')
   }
-  baseurl <- 'http://www.chemspider.com/InChI.asmx/InChIToCSID'
+  baseurl <- 'https://www.chemspider.com/InChI.asmx/InChIToCSID'
   if (verbose)
     message('Querrying ', baseurl)
-  Sys.sleep( rgamma(1, shape = 5, scale = 1/10))
+  Sys.sleep( rgamma(1, shape = 15, scale = 1/45))
   res <- try(POST(baseurl, body = list(inchi = inchi), encode = 'form'),
              silent = TRUE)
   if (inherits(res, "try-error")) {
@@ -685,10 +685,10 @@ cs_inchi_inchikey <- function(inchi, verbose = TRUE, ...){
   if (length(inchi) > 1) {
     stop('Cannot handle multiple input strings.')
   }
-  baseurl <- 'http://www.chemspider.com/InChI.asmx/InChIToInChIKey'
+  baseurl <- 'https://www.chemspider.com/InChI.asmx/InChIToInChIKey'
   if (verbose)
     message('Querrying ', baseurl)
-  Sys.sleep( rgamma(1, shape = 5, scale = 1/10))
+  Sys.sleep( rgamma(1, shape = 15, scale = 1/45))
   res <- try(POST(baseurl, body = list(inchi = inchi), encode = 'form'),
              silent = TRUE)
   if (inherits(res, "try-error")) {
@@ -738,10 +738,10 @@ cs_inchi_mol <- function(inchi, parse = TRUE, verbose = TRUE, ...){
   if (length(inchi) > 1) {
     stop('Cannot handle multiple input strings.')
   }
-  baseurl <- 'http://www.chemspider.com/InChI.asmx/InChIToMol'
+  baseurl <- 'https://www.chemspider.com/InChI.asmx/InChIToMol'
   if (verbose)
     message('Querrying ', baseurl)
-  Sys.sleep( rgamma(1, shape = 5, scale = 1/10))
+  Sys.sleep( rgamma(1, shape = 15, scale = 1/45))
   res <- try(POST(baseurl, body = list(inchi = inchi), encode = 'form'),
              silent = TRUE)
   if (inherits(res, "try-error")) {
@@ -789,10 +789,10 @@ cs_inchi_smiles <- function(inchi, verbose = TRUE, ...){
   if (length(inchi) > 1) {
     stop('Cannot handle multiple input strings.')
   }
-  baseurl <- 'http://www.chemspider.com/InChI.asmx/InChIToSMILES'
+  baseurl <- 'https://www.chemspider.com/InChI.asmx/InChIToSMILES'
   if (verbose)
     message('Querrying ', baseurl)
-  Sys.sleep( rgamma(1, shape = 5, scale = 1/10))
+  Sys.sleep( rgamma(1, shape = 15, scale = 1/45))
   res <- try(POST(baseurl, body = list(inchi = inchi), encode = 'form'),
              silent = TRUE)
   if (inherits(res, "try-error")) {
@@ -837,10 +837,10 @@ cs_smiles_inchi <- function(smiles, verbose = TRUE, ...){
   if (length(smiles) > 1) {
     stop('Cannot handle multiple input strings.')
   }
-  baseurl <- 'http://www.chemspider.com/InChI.asmx/SMILESToInChI'
+  baseurl <- 'https://www.chemspider.com/InChI.asmx/SMILESToInChI'
   if (verbose)
     message('Querrying ', baseurl)
-  Sys.sleep( rgamma(1, shape = 5, scale = 1/10))
+  Sys.sleep( rgamma(1, shape = 15, scale = 1/45))
   res <- try(POST(baseurl, body = list(smiles = smiles), encode = 'form'),
              silent = TRUE)
   if (inherits(res, "try-error")) {

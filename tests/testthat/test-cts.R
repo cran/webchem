@@ -3,7 +3,7 @@ context("cts")
 require(RCurl)
 chk_cts <- function(){
   qurl <- 'http://cts.fiehnlab.ucdavis.edu/service/compound/XEFQLINVKFYRCS-UHFFFAOYSA-N'
-  Sys.sleep(0.3)
+  Sys.sleep(0.5)
   cont <- try(getURL(qurl, .encoding = 'UTF-8', .opts = list(timeout = 3)),
               silent = TRUE)
   if (inherits(cont, 'try-error'))
@@ -12,7 +12,7 @@ chk_cts <- function(){
 
 chk_cir <- function(){
   qurl <- 'http://cactus.nci.nih.gov/chemical/structure/Triclosan/cas/xml'
-  Sys.sleep(0.3)
+  Sys.sleep(0.5)
   cont <- try(getURL(qurl, .encoding = 'UTF-8', .opts = list(timeout = 3)),
               silent = TRUE)
   if (inherits(cont, 'try-error'))
@@ -21,6 +21,8 @@ chk_cir <- function(){
 
 
 test_that("cts_compinfo()", {
+  skip_on_cran()
+
   chk_cts()
   expect_error(cts_compinfo('xxx'))
 
@@ -36,6 +38,8 @@ test_that("cts_compinfo()", {
 
 
 test_that("cts_convert()", {
+  skip_on_cran()
+
   chk_cts()
   comp <- c('XEFQLINVKFYRCS-UHFFFAOYSA-N', 'BSYNRYMUTXBXSQ-UHFFFAOYSA-N')
   expect_error(cts_convert(comp, c('Chemical Name', 'CAS'), 'CAS'))
@@ -47,17 +51,19 @@ test_that("cts_convert()", {
 })
 
 
-# integration tests
-test_that("cts_compinfo(cir_query())", {
-  chk_cts()
-  chk_cir()
-  inchikey <- cir_query('Triclosan', representation = 'stdinchikey', verbose = FALSE)
-  inchikey <- gsub('InChIKey=', '', inchikey)
-  expect_equal(round(cts_compinfo(inchikey, verbose = FALSE)[[1]][["molweight"]], 3), 289.542)
-})
+# # integration tests
+# test_that("cts_compinfo(cir_query())", {
+#   chk_cts()
+#   chk_cir()
+#   inchikey <- cir_query('Triclosan', representation = 'stdinchikey', verbose = FALSE)
+#   inchikey <- gsub('InChIKey=', '', inchikey)
+#   expect_equal(round(cts_compinfo(inchikey, verbose = FALSE)[[1]][["molweight"]], 3), 289.542)
+# })
 
 
 test_that("fromto", {
+  skip_on_cran()
+
   to <- cts_to()
   from <- cts_from()
 

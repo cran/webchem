@@ -122,7 +122,7 @@ is.inchikey_format = function(x, verbose = TRUE) {
   let <- strsplit(x, split = '')[[1]]
   if (any(grepl("[[:digit:]]", let))) {
     if (verbose)
-      message('strings contains numbers.')
+      message('string contains numbers.')
     return(FALSE)
   }
   if (x != toupper(x)) {
@@ -246,8 +246,11 @@ is.cas <-  function(x, verbose = TRUE) {
 #'
 #' @export
 #' @examples
+#' \dontrun{
+#' # might fail if rcdk is not working properly
 #' is.smiles('Clc(c(Cl)c(Cl)c1C(=O)O)c(Cl)c1Cl')
 #' is.smiles('Clc(c(Cl)c(Cl)c1C(=O)O)c(Cl)c1ClJ')
+#' }
 is.smiles <- function(x, verbose = TRUE) {
   if (!requireNamespace("rcdk", quietly = TRUE)) {
     stop("rcdk needed for this function to work. Please install it.",
@@ -258,7 +261,7 @@ is.smiles <- function(x, verbose = TRUE) {
     stop('Cannot handle multiple input strings.')
   }
   out <- try(rcdk::parse.smiles(x), silent = TRUE)
-  if (inherits(out, 'try-error')) {
+  if (inherits(out, 'try-error') | is.na(out)) {
     return(FALSE)
   } else {
     return(TRUE)

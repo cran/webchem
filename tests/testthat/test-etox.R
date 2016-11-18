@@ -1,6 +1,8 @@
 context("etox")
 
 test_that("get_etoxid returns correct results", {
+  skip_on_cran()
+
   # test general
   comps <- c('Triclosan', 'Glyphosate', 'xxxx')
   o1 <- get_etoxid(comps, match = 'best')
@@ -26,6 +28,8 @@ test_that("get_etoxid returns correct results", {
 
 
 test_that("etox_basic returns correct results", {
+  skip_on_cran()
+
   ids <- c("20179", "9051", "xxxxx", NA)
   o1 <- etox_basic(ids)
 
@@ -40,13 +44,15 @@ test_that("etox_basic returns correct results", {
 
 
 test_that("etox_targets returns correct results", {
+  skip_on_cran()
+
   ids <- c("20179", "9051", "xxxxx", NA)
   o1 <- etox_targets(ids)
 
   expect_is(o1, 'list')
   expect_equal(length(o1), 4)
   expect_equal(o1[['20179']]$res$Substance[1], "Triclosan")
-  expect_equal(ncol(o1[['20179']]$res), 32)
+  expect_equal(ncol(o1[['20179']]$res), 33)
   expect_is(o1[['20179']]$res, 'data.frame')
   expect_true(is.na(o1[[3]]))
   expect_true(is.na(o1[[4]]))
@@ -54,6 +60,8 @@ test_that("etox_targets returns correct results", {
 
 
 test_that("etox_tests returns correct results", {
+  skip_on_cran()
+
   ids <- c("20179", "9051", "xxxxx", NA)
   o1 <- etox_tests(ids)
 
@@ -68,6 +76,8 @@ test_that("etox_tests returns correct results", {
 
 
 test_that("etox integration tests", {
+  skip_on_cran()
+
   comps <- c('Triclosan', 'Glyphosate', 'xxxx')
   ids_b <- get_etoxid(comps, match = 'best')
   ids_a <- get_etoxid(comps, match = 'all')
@@ -92,7 +102,7 @@ test_that("etox integration tests", {
   expect_is(int2, 'list')
   expect_equal(length(int2), 3)
   expect_equal(int2[['20179']]$res$Substance[1], "Triclosan")
-  expect_equal(ncol(int2[['20179']]$res), 32)
+  expect_equal(ncol(int2[['20179']]$res), 33)
   expect_is(int2[['20179']]$res, 'data.frame')
   expect_true(is.na(int2[[3]]))
 
