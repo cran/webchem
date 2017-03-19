@@ -1,3 +1,20 @@
+webchem 0.2
+======================
+
+NEW FEATURES
+
+* fn_percept() extracts flavor percepts using CAS numbers from www.flavornet.org. Flavornet is a database of 738 compounds with human-detectible odors. [contributed by @Aariq]
+
+MINOR IMPROVEMENTS
+
+BUG FIXES
+
+DEPRECATED FUNCTIONS
+
+DEFUNCT FUNCTIONS
+
+
+
 webchem 0.1.1
 ======================
 
@@ -180,7 +197,7 @@ MINOR IMPROVEMENTS
 
 BUG FIXES
 
-* Correct the spelling of Alan Wood and rename function allanwood() to alanwood() [contribition of @jranke]
+* Correct the spelling of Alan Wood and rename function allanwood() to alanwood() [contribution of @jranke]
 
 
 
