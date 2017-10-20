@@ -8,16 +8,20 @@ test_that("get_csid()", {
   comps <- c("Triclosan", "50-00-0", "xxxxxx")
   o1 <- get_csid(comps, token = token, verbose = TRUE)
   o2 <- get_csid(comps, token = token, verbose = TRUE, first = FALSE)
+  o3 <- get_csid(c("picoxystrobin", "mandipropamid"), token = token, verbose = TRUE, first = FALSE)
 
   expect_is(o1, 'character')
   expect_is(o2, 'list')
   expect_equal(length(o1),3)
+  expect_equal(o3, structure(list(picoxystrobin = "9460644", mandipropamid = "9467809"), .Names = c("picoxystrobin",
+      "mandipropamid")))
   expect_equal(length(o2), 3)
   expect_true(is.na(o1[[3]]))
   expect_true(is.na(o2[[3]]))
   expect_equal(o1[[1]], '5363')
   expect_equal(o2[[2]], '692')
   expect_true(is.na(get_csid(NA, token = token, verbose = TRUE)))
+
 })
 
 
@@ -62,6 +66,15 @@ test_that("cs_prop()", {
                                      "source_pred", "value_exp",
                                      "unit_exp", "source_exp"))
   expect_equal(names(m1[[1]]$acd), c("variable", "value", "error", "unit"))
+
+  # issue #127
+  m2 <- cs_prop(16105)
+  expect_is(m2, 'list')
+  expect_equal(length(m2), 1)
+  expect_equal(length(m2[[1]]), 3)
+  expect_is(m2[[1]]$epi, 'data.frame')
+  expect_is(m2[[1]]$acd, 'data.frame')
+  expect_equal(m2[[1]]$epi$value_exp[2], 178.5)
 })
 
 
@@ -275,8 +288,8 @@ test_that("cs_convert()", {
   expect_equal(length(m1[[1]]), 4)
   expect_is(m1[[1]]$ab, 'data.frame')
   expect_is(m1[[1]]$bb, 'data.frame')
-  expect_equal(unname(m1[[1]]$cl[1]), "22")
-  expect_equal(unname(m1[[1]]$cl[2]), "26")
+  expect_equal(unname(m1[[1]]$cl[1]), "21")
+  expect_equal(unname(m1[[1]]$cl[2]), "25")
   expect_is(m1r[[1]], 'character')
   expect_equal(length(m1r[[1]]), 1)
 
