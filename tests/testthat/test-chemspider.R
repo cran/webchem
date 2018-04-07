@@ -10,6 +10,9 @@ test_that("get_csid()", {
   o2 <- get_csid(comps, token = token, verbose = TRUE, first = FALSE)
   o3 <- get_csid(c("picoxystrobin", "mandipropamid"), token = token, verbose = TRUE, first = FALSE)
 
+  b1 <- get_csid('acetic acid', token = token, verbose = TRUE)
+  expect_equal(b1, c(`acetic acid` = '171'))
+
   expect_is(o1, 'character')
   expect_is(o2, 'list')
   expect_equal(length(o1),3)
@@ -34,7 +37,7 @@ test_that("cs_compinfo()", {
   expect_equal(dim(o1), c(2, 6))
   expect_equal(o1$csid[1], '2157')
   expect_true(all(is.na(cs_compinfo(NA, token)[ 1, 1:5])))
-  })
+})
 
 
 test_that("cs_extcompinfo()", {
@@ -75,6 +78,31 @@ test_that("cs_prop()", {
   expect_is(m2[[1]]$epi, 'data.frame')
   expect_is(m2[[1]]$acd, 'data.frame')
   expect_equal(m2[[1]]$epi$value_exp[2], 178.5)
+
+  # issue #139 (no epi-suite data available)
+  m3 <- cs_prop(21106900)
+  expect_true(nrow(m3$`21106900`$epi) == 0)
+
+  # issue #138 (invalid chemspider html)
+  m3 <- cs_prop(8012)
+  expect_is(m3, 'list')
+  expect_equal(length(m3), 1)
+  expect_equal(length(m3[[1]]), 3)
+  expect_is(m3[[1]]$epi, 'data.frame')
+  expect_is(m3[[1]]$acd, 'data.frame')
+
+  # issue #142
+  m4 <- cs_prop(391783)
+  expect_is(m4, 'list')
+  expect_equal(length(m4), 1)
+  expect_equal(length(m4[[1]]), 3)
+  expect_is(m4[[1]]$epi, 'data.frame')
+  expect_is(m4[[1]]$acd, 'data.frame')
+
+  # issue #143
+  r <- m4$`391783`$epi
+  expect_equal(r$value_pred[r$prop == 'Water Solubility from KOW'], 13690)
+
 })
 
 
