@@ -13,6 +13,12 @@ test_that("is.cas() returns correct results", {
   expect_error(is.cas(c('64-17-5', '64-17-5')))
 })
 
+test_that("as.cas() handles properly formatted CAS",{
+  skip_on_cran()
+
+  expect_identical(as.cas("64-17-5"), "64-17-5")
+  expect_silent(as.cas("64-17-5"))
+})
 
 test_that("is.inchikey() returns correct results", {
   skip_on_cran()
@@ -55,4 +61,10 @@ test_that("extr_num() returns correct results", {
   expect_equal(extr_num("Melting Pt : 446 deg C"), 446)
 })
 
+test_that("as.cas() returns correct reults", {
+  skip_on_cran()
+  expect_equal(as.cas(58082), "58-08-2")
+  expect_equal(as.cas(123456789), NA)
+  expect_identical(as.cas(c(761659, 123456789, "hexenol")), c("761-65-9", NA, NA))
+})
 

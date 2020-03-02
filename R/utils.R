@@ -13,7 +13,7 @@
 #' @param verbose logical; print messages during processing to console?
 #' @return a logical
 #'
-#' @note This function can handle only one SMILES string.
+#' @note This function can handle only one inchikey string.
 #'
 #' @references Heller, Stephen R., et al. "InChI, the IUPAC International Chemical Identifier." Journal of Cheminformatics 7.1 (2015): 23.
 #'
@@ -165,9 +165,7 @@ is.inchikey_format = function(x, verbose = TRUE) {
 #' @param x character; input CAS
 #' @param verbose logical; print messages during processing to console?
 #' @return a logical
-#'
-#' @note This function can handle only one SMILES string.
-#'
+#' @note This function can only handle one CAS string
 #' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
 #'
 #' @export
@@ -184,10 +182,16 @@ is.cas <-  function(x, verbose = TRUE) {
     stop('Cannot handle multiple input strings.')
   }
 
+  # cas must not have any alpha characters
+  if(grepl(pattern = "[[:alpha:]]", x = x)){
+    if(isTRUE(verbose)){message("String contains alpha characters")}
+    return(FALSE)
+  }
+
   # cas must have two hyphens
   nsep <- str_count(x, '-')
   if (nsep != 2) {
-    if (verbose)
+    if (isTRUE(verbose))
       message('Less than 2 hyphens in string.')
     return(FALSE)
   }
@@ -195,7 +199,7 @@ is.cas <-  function(x, verbose = TRUE) {
   # first part 2 to 7 digits
   fi <- gsub('^(.*)-(.*)-(.*)$', '\\1', x)
   if (nchar(fi) > 7 | nchar(fi) < 2) {
-    if (verbose)
+    if (isTRUE(verbose))
       message('First part with more than 7 digits!')
     return(FALSE)
   }
@@ -203,7 +207,7 @@ is.cas <-  function(x, verbose = TRUE) {
   # second part must be two digits
   se <- gsub('^(.*)-(.*)-(.*)$', '\\2', x)
   if (nchar(se) != 2) {
-    if (verbose)
+    if (isTRUE(verbose))
       message('Second part has not two digits!')
     return(FALSE)
   }
@@ -211,7 +215,7 @@ is.cas <-  function(x, verbose = TRUE) {
   # third part (checksum) must be 1 digit
   th <- gsub('^(.*)-(.*)-(.*)$', '\\3', x)
   if (nchar(th) != 1) {
-    if (verbose)
+    if (isTRUE(verbose))
       message('Third part has not 1 digit!')
     return(FALSE)
   }
@@ -220,7 +224,7 @@ is.cas <-  function(x, verbose = TRUE) {
   di <-  as.numeric(strsplit(gsub('^(.*)-(.*)-(.*)$', '\\1\\2', x), split = '')[[1]])
   checksum <- sum(rev(seq_along(di)) * di)
   if (checksum %% 10 != as.numeric(th)) {
-    if (verbose)
+    if (isTRUE(verbose))
       message('Checksum is not correct! ', checksum %% 10, ' vs. ', th)
     return(FALSE)
   }
@@ -272,7 +276,7 @@ is.smiles <- function(x, verbose = TRUE) {
 #' Extract a number from a string
 #' @param x character; input string
 #' @return a numeric vector
-#' @export
+#' @noRd
 #' @examples
 #' extr_num('aaaa -95')
 #' extr_num("Melting Pt : -44.6 deg C")
@@ -283,7 +287,7 @@ extr_num <- function(x) {
 }
 
 
-#' Parse Molfile (as returned by chemspider) into a R-object.
+#' Parse Molfile (as returned by ChemSpider) into a R-object.
 #'
 #' @param string molfile as one string
 #' @return A list with of four entries: header (eh), counts line (cl), atom block (ab) and bond block (bb).
@@ -299,12 +303,10 @@ extr_num <- function(x) {
 #' 1 = first atom, 2 = second atom, t = bond type, s = stereo type, x = not used, r = bond typology,
 #' c = reacting center status.
 #'
-#' For more information see  \url{infochim.u-strasbg.fr/recherche/Download/Fragmentor/MDL_SDF.pdf}.
-#'
 #' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
 #' @references Grabner, M., Varmuza, K., & Dehmer, M. (2012). RMol:
 #' a toolset for transforming SD/Molfile structure information into R objects.
-#' Source Code for Biology and Medicine, 7, 12. http://doi.org/10.1186/1751-0473-7-12
+#' Source Code for Biology and Medicine, 7, 12. \url{http://doi.org/10.1186/1751-0473-7-12}
 #' @export
 
 parse_mol <- function(string) {
@@ -332,3 +334,78 @@ parse_mol <- function(string) {
   return(list(eh = h, cl = cl, ab = ab, bb = bb))
 }
 
+
+#' Format numbers as CAS numbers
+#' @description This function attempts to format numeric (or character) vectors
+#' as character vectors of CAS numbers.  If they cannot be converted to CAS
+#' format or don't pass \code{\link{is.cas}}, \code{NA} is returned
+#' @param x numeric vector, or character vector of CAS numbers missing the hyphens
+#'
+#' @return character vector of valid CAS numbers
+#' @seealso \code{\link{is.cas}}
+#' @export
+#' @author Eric Scott, \email{scottericr@@gmail.com}
+#' @examples
+#' x = c(58082, 123456, "hexenol")
+#' as.cas(x)
+#'
+as.cas <- function(x){
+  format.cas <- function(x){
+    if(is.na(x)) {
+      return(NA)
+    } else if (suppressMessages(is.cas(x))) {
+      return(x)
+    } else {
+      parsed <- gsub("([0-9]+)([0-9]{2})([0-9]{1})", '\\1-\\2-\\3', x)
+      pass <- is.cas(parsed)
+      out <- ifelse(pass, parsed, NA)
+      return(out)
+    }
+  }
+
+  sapply(x, format.cas, USE.NAMES = FALSE)
+}
+
+
+#' Interactively choose a result from a menu
+#' @description In interactive sessions, prompts a user to choose an element of a vector from a menu. Use this for all functions that return multiple possible results such as multiple identifiers or synonyms.
+#' @param x a character vector
+#' @param choices If \code{choices = "all"} then the entire vector \code{x} is
+#' used for the menu.  If numeric > 1, only that number of elements from the
+#' start of \code{x} are shown. If \code{choices = 1}, then the first element of
+#' \code{x} is returned without prompting the user.  If \code{NULL} then
+#' \code{x} is returned unchanged.
+#'
+#' @importFrom utils menu
+#' @importFrom utils head
+#' @return a character vector of length 1
+#' @noRd
+#'
+#' @examples
+#' test <- c("apples", "bananas", "orange", "plum", "peach", "guava", "kumquat")
+#' chooser(test, "all")
+#' chooser(test, 3)
+chooser <- function(x, choices){
+  if(interactive() & !is.null(choices)){
+    #only in an interactive R session when number of choices is specified
+    if(is.numeric(choices) & choices > length(x)) {
+      choices = "all"
+      warning('Number of choices excedes length of x, using all choices instead',
+              immediate. = TRUE)
+    }
+    if(choices == "all") { #then give all of x as possible choices
+      pick <- menu(x, graphics = FALSE, 'Select one:')
+      out <- x[pick]
+    }
+    if(choices == 1) {
+      out <- x[1]
+    }
+    if(is.numeric(choices) & choices > 1){
+      pick <- menu(head(x, choices), graphics = FALSE, 'Select one:')
+      out <- x[pick]
+    }
+  } else {
+    out <- x
+  }
+  return(out)
+}

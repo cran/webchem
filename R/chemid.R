@@ -1,6 +1,7 @@
-#' Retrieve information from ChemIDPlus \url{http://chem.sis.nlm.nih.gov/chemidplus}
+#' Retrieve information from ChemIDPlus
 #'
-#' Retrieve information from ChemIDPlus \url{http://chem.sis.nlm.nih.gov/chemidplus}
+#' Retrieve information from ChemIDPlus
+#' \url{http://chem.sis.nlm.nih.gov/chemidplus}
 #'
 #' @import xml2
 #' @importFrom rvest html_table
@@ -8,18 +9,18 @@
 #' @importFrom utils URLencode URLdecode
 #'
 #' @param query character; query string
-#' @param type character; type of query string.
-#'     'rn' for regeistry number or 'name' for common name or 'inchikey' for inchikey as input.
-#' @param match character; How should multiple hits be handeled?
-#' 'first' returns only the first match, 'best' the best matching (by name) ID, 'ask' is a interactive mode and the user is asked for input,
-#' 'na' returns NA if multiple hits are found.
+#' @param type character; type of query string. \code{"rn"} for registry number
+#' or \code{"name"} for common name or \code{"inchikey"} for inchikey as input.
+#' @param match character; How should multiple hits be handeled? \code{"first"}
+#' returns only the first match, \code{"best"} the best matching (by name) ID,
+#' \code{"ask"} enters an interactive mode and the user is asked for input,
+#' \code{"na"} returns NA if multiple hits are found.
 #' @param verbose logical; should a verbose output be printed on the console?
 #' @return A list of 8 entries: name (vector), synonyms (vector), cas (vector),
 #' inchi (vector), inchikey (vector), smiles(vector), toxicity (data.frame),
 #' physprop (data.frame) and source_url.
-#'
-#' @note The data of the entry \code{pp_query} is identical to the result returned
-#' by \code{\link{pp_query}}.
+#' @note Please respect the Terms and Conditions of the National Library of
+#' Medicine, \url{https://www.nlm.nih.gov/databases/download.html}.
 #'
 #' @export
 #' @examples
@@ -149,22 +150,62 @@ ci_query <- function(query, type = c('name', 'rn', 'inchikey'),
       source_url <- gsub('^(.*)\\?.*', '\\1', qurl)
     }
 
-    name <- xml_text(xml_find_all(ttt, "//h3[contains(., 'Name of Substance')]/following-sibling::div[1]//li"))
-    synonyms <- xml_text(xml_find_all(ttt, "//h3[contains(., 'Synonyms')]/following-sibling::div[1]//li"))
-    cas <- xml_text(xml_find_all(ttt, "//h3[contains(., 'CAS Registry')]/following-sibling::ul[1]//li"))
-    inchi <- gsub('\\n|\\t', '',
-                  xml_text(xml_find_all(ttt, "//h3[contains(., 'InChI')]/following-sibling::text()[1]"))[1]
-                  )
-    inchikey <- gsub('\\n|\\t|\\r', '',
-                     xml_text(xml_find_all(ttt, "//h3[contains(., 'InChIKey')]/following-sibling::text()[1]"))
-    )
-    smiles <- gsub('\\n|\\t|\\r', '',
-                   xml_text(xml_find_all(ttt, "//h3[contains(., 'Smiles')]/following-sibling::text()[1]"))
-    )
-    toxicity <- html_table(xml_find_all(ttt, "//h2[contains(., 'Toxicity')]/following-sibling::div//table"))[[1]]
-    physprop <- html_table(xml_find_all(ttt, "//h2[contains(., 'Physical Prop')]/following-sibling::div//table"))[[1]]
-    physprop[ , 'Value'] <- as.numeric(physprop[ , 'Value'])
-    #= same as physprop
+    if(is.na(xml_find_first(ttt, "//h3[contains(., 'Name of Substance')]/following-sibling::div[1]//li"))){
+      name <- NA
+    }else{
+      name <- xml_text(xml_find_all(ttt, "//h3[contains(., 'Name of Substance')]/following-sibling::div[1]//li"))
+    }
+
+    if(is.na(xml_find_first(ttt, "//h3[contains(., 'Synonyms')]/following-sibling::div[1]//li"))){
+      synonyms <- NA
+    }else{
+      synonyms <- xml_text(xml_find_all(ttt, "//h3[contains(., 'Synonyms')]/following-sibling::div[1]//li"))
+    }
+
+    if(is.na(xml_find_first(ttt, "//h3[contains(., 'CAS Registry')]/following-sibling::ul[1]//li"))){
+      cas <- NA
+    } else {
+      cas <- xml_text(xml_find_all(ttt, "//h3[contains(., 'CAS Registry')]/following-sibling::ul[1]//li"))
+    }
+
+    if(is.na(xml_find_first(ttt, "//h3[contains(., 'InChI')]/following-sibling::text()[1]"))){
+      inchi <- NA
+    } else {
+      inchi <- gsub('\\n|\\t', '',
+                    xml_text(xml_find_all(ttt, "//h3[contains(., 'InChI')]/following-sibling::text()[1]"))[1]
+      )
+    }
+
+    if(is.na(xml_find_first(ttt, "//h3[contains(., 'InChIKey')]/following-sibling::text()[1]"))){
+      inchikey <- NA
+    } else {
+      inchikey <- gsub('\\n|\\t|\\r', '',
+                       xml_text(xml_find_all(ttt, "//h3[contains(., 'InChIKey')]/following-sibling::text()[1]"))
+                       )
+    }
+
+    if(is.na(xml_find_first(ttt, "//h3[contains(., 'Smiles')]/following-sibling::text()[1]"))){
+      smiles <- NA
+    } else {
+      smiles <- gsub('\\n|\\t|\\r', '',
+                     xml_text(xml_find_all(ttt, "//h3[contains(., 'Smiles')]/following-sibling::text()[1]"))
+      )
+    }
+
+    if(is.na(xml_find_first(ttt, "//h2[contains(., 'Toxicity')]/following-sibling::div//table"))){
+      toxicity <- NA
+    } else {
+      toxicity <- html_table(xml_find_all(ttt, "//h2[contains(., 'Toxicity')]/following-sibling::div//table"))[[1]]
+    }
+
+     if(is.na(xml_find_first(ttt, "//h2[contains(., 'Physical Prop')]/following-sibling::div//table"))){
+      physprop <- NA
+    } else {
+      physprop <- html_table(xml_find_all(ttt, "//h2[contains(., 'Physical Prop')]/following-sibling::div//table"))[[1]]
+      physprop[ , 'Value'] <- as.numeric(physprop[ , 'Value'])
+      #= same as physprop
+    }
+
 
     out <- list(name = name, synonyms = synonyms, cas = cas, inchi = inchi,
                 inchikey = inchikey, smiles = smiles, toxicity = toxicity,
@@ -176,6 +217,6 @@ ci_query <- function(query, type = c('name', 'rn', 'inchikey'),
   }
   out <- lapply(query, foo, type = type, match = match, verbose = verbose)
   out <- setNames(out, query)
-  class(out) <- c('list', 'ci_query')
+  class(out) <- c('ci_query','list')
   return(out)
 }

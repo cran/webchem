@@ -3,7 +3,7 @@
 #' Return CompoundID (CID) for a search query using PUG-REST,
 #' see \url{https://pubchem.ncbi.nlm.nih.gov/}.
 #' @import httr
-#'
+#' @importFrom stats rgamma
 #' @param query character; search term.
 #' @param from character; type of input, can be one of 'name' (default), 'cid', 'sid', 'aid', 'smiles', 'inchi', 'inchikey'
 #' @param first logical; If TRUE return only first result.
@@ -20,7 +20,11 @@
 #'
 #' Kim, S., Thiessen, P. A., Bolton, E. E., & Bryant, S. H. (2015).
 #' PUG-SOAP and PUG-REST: web services for programmatic access to chemical information in PubChem. Nucleic acids research, gkv396.
-#'
+#' @note Please respect the Terms and Conditions of the National Library of
+#' Medicine, \url{https://www.nlm.nih.gov/databases/download.html} and the data
+#' usage policies of National Center for Biotechnology Information,
+#' \url{https://www.ncbi.nlm.nih.gov/home/about/policies/},
+#' \url{https://pubchemdocs.ncbi.nlm.nih.gov/programmatic-access}.
 #' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
 #' @export
 #' @examples
@@ -50,7 +54,7 @@ get_cid <- function(query, from = 'name', first = FALSE, verbose = TRUE, arg = N
     qurl <- paste0(prolog, input, output, arg)
     if (verbose)
       message(qurl)
-    Sys.sleep(0.2)
+    Sys.sleep( rgamma(1, shape = 15, scale = 1/10))
     cont <- try(content(POST(qurl,
                              body = paste0(from, '=', query)
                              ), type = 'text', encoding = 'UTF-8'),
@@ -103,7 +107,11 @@ get_cid <- function(query, from = 'name', first = FALSE, verbose = TRUE, arg = N
 #'
 #' Kim, S., Thiessen, P. A., Bolton, E. E., & Bryant, S. H. (2015).
 #' PUG-SOAP and PUG-REST: web services for programmatic access to chemical information in PubChem. Nucleic acids research, gkv396.
-#'
+#' @note Please respect the Terms and Conditions of the National Library of
+#' Medicine, \url{https://www.nlm.nih.gov/databases/download.html} and the data
+#' usage policies of National Center for Biotechnology Information,
+#' \url{https://www.ncbi.nlm.nih.gov/home/about/policies/},
+#' \url{https://pubchemdocs.ncbi.nlm.nih.gov/programmatic-access}.
 #' @export
 #' @examples
 #' \donttest{
@@ -177,7 +185,7 @@ pc_prop <- function(cid, properties = NULL, verbose = TRUE, ...){
       }
     }}
   rownames(out) <- NULL
-  class(out) <- c('data.frame', 'pc_prop')
+  class(out) <- c('pc_prop','data.frame')
   return(out)
 }
 
@@ -192,8 +200,8 @@ pc_prop <- function(cid, properties = NULL, verbose = TRUE, ...){
 #' @param query character; search term.
 #' @param from character; type of input, can be one of 'name' (default), 'cid',
 #'     'sid', 'aid', 'smiles', 'inchi', 'inchikey'
-#' @param interactive numeric; if > 0 an interactive mode is entered to pick one of the x displayed synonyms.
-#'     The number specifies how many synonyms are displayed.
+#' @param interactive deprecated.  Use the \code{choices} argument instead
+#' @param choices to get only the first synonym, use \code{choices = 1}, to get a number of synonyms to choose from in an interactive menu, provide the number of choices you want or "all" to choose from all synonyms.
 #' @param verbose logical; should a verbose output be printed on the console?
 #' @param arg character; optinal arguments like 'name_type=word' to match individual words.
 #' @param ... optional arguments
@@ -207,7 +215,11 @@ pc_prop <- function(cid, properties = NULL, verbose = TRUE, ...){
 #'
 #' Kim, S., Thiessen, P. A., Bolton, E. E., & Bryant, S. H. (2015).
 #' PUG-SOAP and PUG-REST: web services for programmatic access to chemical information in PubChem. Nucleic acids research, gkv396.
-#'
+#' @note Please respect the Terms and Conditions of the National Library of
+#' Medicine, \url{https://www.nlm.nih.gov/databases/download.html} and the data
+#' usage policies of National Center for Biotechnology Information,
+#' \url{https://www.ncbi.nlm.nih.gov/home/about/policies/},
+#' \url{https://pubchemdocs.ncbi.nlm.nih.gov/programmatic-access}.
 #' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
 #' @export
 #' @examples
@@ -215,13 +227,14 @@ pc_prop <- function(cid, properties = NULL, verbose = TRUE, ...){
 #' pc_synonyms('Aspirin')
 #' pc_synonyms(c('Aspirin', 'Triclosan'))
 #' pc_synonyms(5564, from = 'cid')
-#' pc_synonyms(c('Aspirin', 'Triclosan'), interactive = 10)
+#' pc_synonyms(c('Aspirin', 'Triclosan'), choices = 10)
 #' }
-pc_synonyms <- function(query, from = 'name', interactive = 0, verbose = TRUE, arg = NULL, ...) {
+pc_synonyms <- function(query, from = 'name', choices = NULL, verbose = TRUE, arg = NULL, interactive = 0, ...) {
   # from can be cid | name | smiles | inchi | sdf | inchikey | formula
   # query <- c('Aspirin')
   # from = 'name'
-
+  if(!missing("interactive"))
+    stop("'interactive' is deprecated. Use 'choices' instead.")
   foo <- function(query, from, verbose, ...){
     prolog <- 'https://pubchem.ncbi.nlm.nih.gov/rest/pug'
     input <- paste0('/compound/', from)
@@ -247,15 +260,13 @@ pc_synonyms <- function(query, from = 'name', interactive = 0, verbose = TRUE, a
     out <- unlist(cont)
     names(out) <- NULL
 
-    if (interactive > 0 && length(out) > 1) {
-      pick <- menu(out[seq_len(interactive)], graphics = FALSE, 'Select one:')
-      out <- out[pick]
-    }
+    out <- chooser(out, choices)
 
-    return(out)
   }
   out <- lapply(query, foo, from = from, verbose = verbose)
   out <- setNames(out, query)
+  if(!is.null(choices)) #if only one choice is returned, convert list to vector
+    out <- unlist(out)
   return(out)
 }
 

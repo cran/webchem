@@ -4,8 +4,15 @@
 \alias{cir_query}
 \title{Query Chemical Identifier Resolver}
 \usage{
-cir_query(identifier, representation = "smiles", resolver = NULL,
-  first = FALSE, verbose = TRUE, ...)
+cir_query(
+  identifier,
+  representation = "smiles",
+  resolver = NULL,
+  first = FALSE,
+  choices = NULL,
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{identifier}{character; chemical identifier.}
@@ -17,7 +24,11 @@ be returned. See details for possible representations.}
 the identifier type is detected and the different resolvers are used in turn.
 See details for possible resolvers.}
 
-\item{first}{logical; If TRUE return only first result.}
+\item{first}{deprecated, use choices = 1 to return only the first result}
+
+\item{choices}{if \code{choices = 1}, returns only the first result. To get a
+number of results to choose from in an interactive menu, provide the number
+of choices you want or "all" to choose from all synonyms.}
 
 \item{verbose}{logical; should a verbose output be printed on the console?}
 
@@ -27,13 +38,11 @@ See details for possible resolvers.}
 A list of character vectors. If first = TRUE a vector.
 }
 \description{
-Query Chemical Identifier Resolver
-}
-\details{
 A interface to the Chemical Identifier Resolver (CIR).
  (\url{http://cactus.nci.nih.gov/chemical/structure_documentation}).
-
- CIR can resolve can be of the following \code{identifier}: Chemical Names,
+}
+\details{
+CIR can resolve can be of the following \code{identifier}: Chemical Names,
  IUPAC names,
  CAS Numbers, SMILES strings, IUPAC InChI/InChIKeys, NCI/CADD Identifiers,
  CACTVS HASHISY, NSC number, PubChem SID, ZINC Code, ChemSpider ID,

@@ -1,4 +1,8 @@
 #' Query Chemical Identifier Resolver
+#'
+#' A interface to the Chemical Identifier Resolver (CIR).
+#'  (\url{http://cactus.nci.nih.gov/chemical/structure_documentation}).
+#'
 #' @import xml2
 #' @importFrom utils URLencode
 #'
@@ -8,13 +12,14 @@
 #' @param resolver character; what resolver should be used? If NULL (default)
 #'  the identifier type is detected and the different resolvers are used in turn.
 #'  See details for possible resolvers.
-#' @param first logical; If TRUE return only first result.
+#' @param first deprecated, use choices = 1 to return only the first result
+#' @param choices if \code{choices = 1}, returns only the first result. To get a
+#' number of results to choose from in an interactive menu, provide the number
+#' of choices you want or "all" to choose from all synonyms.
 #' @param verbose logical; should a verbose output be printed on the console?
 #' @param ... currently not used.
 #' @return A list of character vectors. If first = TRUE a vector.
-#' @details A interface to the Chemical Identifier Resolver (CIR).
-#'  (\url{http://cactus.nci.nih.gov/chemical/structure_documentation}).
-#'
+#' @details
 #'  CIR can resolve can be of the following \code{identifier}: Chemical Names,
 #'  IUPAC names,
 #'  CAS Numbers, SMILES strings, IUPAC InChI/InChIKeys, NCI/CADD Identifiers,
@@ -108,46 +113,53 @@
 #'}
 #' @export
 cir_query <- function(identifier, representation = 'smiles', resolver = NULL,
-                      first = FALSE, verbose = TRUE, ...){
+                      first = FALSE, choices = NULL, verbose = TRUE, ...){
   foo <- function(identifier, representation, resolver, first, verbose) {
-    identifier <- URLencode(identifier)
-    baseurl <- "https://cactus.nci.nih.gov/chemical/structure"
-    qurl <- paste(baseurl, identifier, representation, 'xml', sep = '/')
-    if (!is.null(resolver)) {
-      qurl <- paste0(qurl, '?resolver=', resolver)
-    }
-    if (verbose)
-      message(qurl)
-    Sys.sleep(1.5)
-    h <- try(GET(qurl, timeout(5)))
-    if (inherits(h, "try-error")) {
-      warning('Problem with web service encountered... Returning NA.')
+    if (is.na(identifier)) {
       return(NA)
     } else {
-      tt <- read_xml(content(h, as = 'raw'))
-      out <- xml_text(xml_find_all(tt, '//item'))
+      identifier <- URLencode(identifier)
+      baseurl <- "https://cactus.nci.nih.gov/chemical/structure"
+      qurl <- paste(baseurl, identifier, representation, 'xml', sep = '/')
+
+      if (!is.null(resolver)) {
+        qurl <- paste0(qurl, '?resolver=', resolver)
+      }
+      if (verbose)
+        message(qurl)
+      Sys.sleep(1.5)
+      h <- try(GET(qurl, timeout(5)))
+      if (inherits(h, "try-error")) {
+        warning('Problem with web service encountered... Returning NA.')
+        return(NA)
+      } else {
+        tt <- read_xml(content(h, as = 'raw'))
+        out <- xml_text(xml_find_all(tt, '//item'))
+      }
+      if (length(out) == 0) {
+        message('No representation found... Returning NA.')
+        return(NA)
+      }
+      # if (first)
+      #   out <- out[1]
+      out <- chooser(out, choices)
+      # convert to numeric
+      if (representation %in% c('mw', 'monoisotopic_mass', 'h_bond_donor_count',
+                                'h_bond_acceptor_count', 'h_bond_center_count',
+                                'rule_of_5_violation_count', 'rotor_count',
+                                'effective_rotor_count', 'ring_count', 'ringsys_count',
+                                'xlogp2', 'heteroatom_count', 'hydrogen_atom_count',
+                                'heavy_atom_count', 'deprotonable_group_count',
+                                'protonable_group_count') )
+        out <- as.numeric(out)
+      return(out)
     }
-    if (length(out) == 0) {
-      message('No representation found... Returning NA.')
-      return(NA)
-    }
-    if (first)
-      out <- out[1]
-    # convert to numeric
-    if (representation %in% c('mw', 'monoisotopic_mass', 'h_bond_donor_count',
-                             'h_bond_acceptor_count', 'h_bond_center_count',
-                             'rule_of_5_violation_count', 'rotor_count',
-                             'effective_rotor_count', 'ring_count', 'ringsys_count',
-                             'xlogp2', 'heteroatom_count', 'hydrogen_atom_count',
-                             'heavy_atom_count', 'deprotonable_group_count',
-                             'protonable_group_count') )
-      out <- as.numeric(out)
-    return(out)
   }
   out <- lapply(identifier, foo, representation = representation,
                 resolver = resolver, first = first, verbose = verbose)
   out <- setNames(out, identifier)
-  if (first)
+  # if (first)
+  if(!is.null(choices))
     out <- unlist(out)
   return(out)
 }

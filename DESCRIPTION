@@ -3,33 +3,40 @@ Title: Chemical Information from the Web
 Description: Chemical information from around the web. This package interacts
     with a suite of web APIs for chemical information.
 Type: Package
-Version: 0.4.0
-Date: 2018-04-07
+Version: 0.5.0
+Date: 2020-02-29
 License: MIT + file LICENSE
-URL: https://github.com/ropensci/webchem
+URL: https://docs.ropensci.org/webchem,
+        https://github.com/ropensci/webchem
 BugReports: https://github.com/ropensci/webchem/issues
-Authors@R: c(person("Eduard", "Szöcs", role = c("aut", "cre"),
-    email = "eduardszoecs@gmail.com"),
+Authors@R: c(person("Eduard", "Szöcs", role = "aut"),
+    person("Robert", "Allaway", role = "ctb"),    
     person("Daniel", "Muench", role = "ctb"),
     person("Johannes", "Ranke", role = "ctb"),
-    person("Eric", "Scott", role = "ctb"),
+    person("Andreas", "Scharmüller", role = "ctb"),        
+    person("Eric R", "Scott", role = "ctb"),
     person("Jan", "Stanstrup", role = "ctb"),
-    person("Robert", "Allaway", role = "ctb"))
-Maintainer: Eduard Szöcs <eduardszoecs@gmail.com>
+    person("Gordon", "Getzinger", role = "ctb"),
+    person("Tamás", "Stirling", email = "stirling.tamas@gmail.com", role = c("ctb", "cre")))
+Maintainer: Tamás Stirling <stirling.tamas@gmail.com>
 LazyLoad: yes
 LazyData: yes
 Encoding: UTF-8
 Depends: R (>= 3.0)
-Imports: xml2, httr, rvest, RCurl, jsonlite, stringr, methods
+Imports: xml2, httr, rvest, RCurl, jsonlite, stringr, methods, dplyr,
+        purrr
 Suggests: testthat, rcdk
-RoxygenNote: 6.0.1
+RoxygenNote: 7.0.2
 NeedsCompilation: no
-Packaged: 2018-04-07 21:41:27 UTC; edisz
-Author: Eduard Szöcs [aut, cre],
+Packaged: 2020-02-29 16:07:08 UTC; tomi
+Author: Eduard Szöcs [aut],
+  Robert Allaway [ctb],
   Daniel Muench [ctb],
   Johannes Ranke [ctb],
-  Eric Scott [ctb],
+  Andreas Scharmüller [ctb],
+  Eric R Scott [ctb],
   Jan Stanstrup [ctb],
-  Robert Allaway [ctb]
+  Gordon Getzinger [ctb],
+  Tamás Stirling [ctb, cre]
 Repository: CRAN
-Date/Publication: 2018-04-07 21:55:26 UTC
+Date/Publication: 2020-03-02 17:00:02 UTC
