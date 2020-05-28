@@ -1,7 +1,7 @@
 #' Retrieve information from ChemIDPlus
 #'
 #' Retrieve information from ChemIDPlus
-#' \url{http://chem.sis.nlm.nih.gov/chemidplus}
+#' \url{https://chem.nlm.nih.gov/chemidplus}
 #'
 #' @import xml2
 #' @importFrom rvest html_table
@@ -53,15 +53,17 @@ ci_query <- function(query, type = c('name', 'rn', 'inchikey'),
   type <- match.arg(type)
   match <- match.arg(match)
   foo <- function(query, type, match, verbose){
+    on.exit(suppressWarnings(closeAllConnections()))
     if (is.na(query)) {
       message('query is NA! Returning NA.\n')
       return(NA)
     }
     query <- URLencode(query)
-    baseurl <- switch(type,
-           rn = 'https://chem.sis.nlm.nih.gov/chemidplus/rn/',
-           name = 'https://chem.sis.nlm.nih.gov/chemidplus/name/startswith/',
-           inchikey = 'https://chem.sis.nlm.nih.gov/chemidplus/inchikey/')
+    baseurl <- switch(
+      type,
+      rn = 'https://chem.nlm.nih.gov/chemidplus/rn/startswith/',
+      name = "https://chem.nlm.nih.gov/chemidplus/name/startswith/",
+      inchikey = "https://chem.nlm.nih.gov/chemidplus/inchikey/startswith/")
     # return max 50 hits
     qurl <- paste0(baseurl, query, '?DT_START_ROW=0&DT_ROWS_PER_PAGE=50')
     if (verbose)
@@ -138,7 +140,7 @@ ci_query <- function(query, type = c('name', 'rn', 'inchikey'),
       }
 
       # retry with CAS-API
-      qurl <- paste0('http://chem.sis.nlm.nih.gov/chemidplus/rn/', hit_cas)
+      qurl <- paste0('https://chem.nlm.nih.gov/chemidplus/rn/', hit_cas)
       if (verbose)
         message(qurl)
       Sys.sleep( rgamma(1, shape = 15, scale = 1/10))
@@ -217,6 +219,6 @@ ci_query <- function(query, type = c('name', 'rn', 'inchikey'),
   }
   out <- lapply(query, foo, type = type, match = match, verbose = verbose)
   out <- setNames(out, query)
-  class(out) <- c('ci_query','list')
+  class(out) <- c('ci_query', 'list')
   return(out)
 }

@@ -9,15 +9,20 @@
 #' 5) 25th character (version character) must be 'A' (currently).
 #'
 #' @param x character; input InChIKey
-#' @param type character; How should be checked? Either, by format (see above) ('format') or by ChemSpider ('chemspider').
+#' @param type character; How should be checked? Either, by format (see above)
+#' ('format') or by ChemSpider ('chemspider').
 #' @param verbose logical; print messages during processing to console?
 #' @return a logical
 #'
 #' @note This function can handle only one inchikey string.
 #'
-#' @references Heller, Stephen R., et al. "InChI, the IUPAC International Chemical Identifier." Journal of Cheminformatics 7.1 (2015): 23.
-#'
-#' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
+#' @references Heller, Stephen R., et al. "InChI, the IUPAC International
+#' Chemical Identifier." Journal of Cheminformatics 7.1 (2015): 23.
+#' @references Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
+#' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
+#' Information from the Web. Journal of Statistical Software, 93(13).
+#' <doi:10.18637/jss.v093.i13>.
+#' @author Eduard Szöcs, \email{eduardszoecs@@gmail.com}
 #' @export
 #' @examples
 #' is.inchikey('BQJCRHHNABKAKU-KBQPJGBKSA-N')
@@ -48,7 +53,7 @@ is.inchikey = function(x, type = c('format', 'chemspider'), verbose = TRUE) {
 #' @return a logical
 #'
 #' @seealso \code{\link{is.inchikey}} for a pure-R implementation.
-#' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
+#' @author Eduard Szöcs, \email{eduardszoecs@@gmail.com}
 #' @export
 #' @examples
 #' \donttest{
@@ -87,7 +92,8 @@ is.inchikey_cs <- function(x, verbose = TRUE){
 #' 1) consist of 27 characters;
 #' 2) be all uppercase, all letters (no numbers);
 #' 3) contain two hyphens at positions 15 and 26;
-#' 4) 24th character (flag character) be 'S' (Standard InChI) or 'N' (non-standard)
+#' 4) 24th character (flag character) be 'S' (Standard InChI) or 'N'
+#' (non-standard)
 #' 5) 25th character (version character) must be 'A' (currently).
 #'
 #' @param x character; input string
@@ -95,7 +101,7 @@ is.inchikey_cs <- function(x, verbose = TRUE){
 #' @return a logical
 #'
 #' @seealso \code{\link{is.inchikey}} for a pure-R implementation.
-#' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
+#' @author Eduard Szöcs, \email{eduardszoecs@@gmail.com}
 #' @export
 #' @examples
 #' \donttest{
@@ -155,18 +161,23 @@ is.inchikey_format = function(x, verbose = TRUE) {
 #'
 #' @description This function checks if a string is a valid CAS registry number.
 #' A valid CAS is 1) separated by two hyphes into three parts; 2) the first part
-#' consists from two up to seven digits; 3) the second of two digits; 4) the third
-#' of one digit (check digit); 5) the check digits corresponds the checksum.
-#' The checksum is found by taking the last digit (excluding the check digit) multiplyingit with 1,
-#' the second last multiplied with 2, the third-last multiplied with 3 etc.
-#' The modulo 10 of the sum of these is the checksum.
+#' consists from two up to seven digits; 3) the second of two digits; 4) the
+#' third of one digit (check digit); 5) the check digits corresponds the
+#' checksum. The checksum is found by taking the last digit (excluding the check
+#' digit) multiplyingit with 1, the second last multiplied with 2, the
+#' third-last multiplied with 3 etc. The modulo 10 of the sum of these is the
+#' checksum.
 #'
 #' @import stringr
 #' @param x character; input CAS
 #' @param verbose logical; print messages during processing to console?
 #' @return a logical
 #' @note This function can only handle one CAS string
-#' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
+#' @references Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
+#' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
+#' Information from the Web. Journal of Statistical Software, 93(13).
+#' <doi:10.18637/jss.v093.i13>.
+#' @author Eduard Szöcs, \email{eduardszoecs@@gmail.com}
 #'
 #' @export
 #' @examples
@@ -221,7 +232,8 @@ is.cas <-  function(x, verbose = TRUE) {
   }
 
   # check checksum
-  di <-  as.numeric(strsplit(gsub('^(.*)-(.*)-(.*)$', '\\1\\2', x), split = '')[[1]])
+  di <-  as.numeric(strsplit(gsub('^(.*)-(.*)-(.*)$', '\\1\\2', x),
+                             split = '')[[1]])
   checksum <- sum(rev(seq_along(di)) * di)
   if (checksum %% 10 != as.numeric(th)) {
     if (isTRUE(verbose))
@@ -235,17 +247,19 @@ is.cas <-  function(x, verbose = TRUE) {
 
 #' Check if input is a SMILES string
 #'
-#' @description This function checks if a string is a valid SMILES by checking if (R)CDK can parse it.
-#' If it cannot be parsed by rcdk FALSE is returned, else TRUE.
+#' @description This function checks if a string is a valid SMILES by checking
+#' if (R)CDK can parse it. If it cannot be parsed by rcdk FALSE is returned,
+#' else TRUE.
 #' @param x character; input SMILES.
 #' @param verbose logical; print messages during processing to console?
 #' @return a logical
 #'
 #' @note This function can handle only one SMILES string.
 #'
-#' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
+#' @author Eduard Szöcs, \email{eduardszoecs@@gmail.com}
 #'
-#' @references Egon Willighagen (2015). How to test SMILES strings in Supplementary Information.
+#' @references Egon Willighagen (2015). How to test SMILES strings in
+#' Supplementary Information.
 #' \url{https://chem-bla-ics.blogspot.nl/2015/10/how-to-test-smiles-strings-in.html}
 #'
 #' @export
@@ -290,23 +304,27 @@ extr_num <- function(x) {
 #' Parse Molfile (as returned by ChemSpider) into a R-object.
 #'
 #' @param string molfile as one string
-#' @return A list with of four entries: header (eh), counts line (cl), atom block (ab) and bond block (bb).
-#' header: a = number of atoms, b = number of bonds, l = number of atom lists, f = obsolete,
-#' c = chiral flag (0=not chiral, 1 = chiral), s = number of stext entries, x, r, p, i = obsolete,
-#' m = 999, v0 version
+#' @return A list with of four entries: header (eh), counts line (cl), atom
+#' block (ab) and bond block (bb).
 #'
-#' atom block: x, y, z = atom coordinates, a = mass difference, c= charge, s= stereo parity,
-#' h = hydrogen count 1, b = stereo care box, v = valence, h = h0 designator, r, i = not used,
-#' m = atom-atom mapping number, n = inversion/retention flag, e = exact change flag
+#' header: a = number of atoms, b = number of bonds, l = number of atom lists,
+#' f = obsolete, c = chiral flag (0=not chiral, 1 = chiral), s = number of stext
+#' entries, x, r, p, i = obsolete, m = 999, v0 version
+#'
+#' atom block: x, y, z = atom coordinates, a = mass difference, c= charge,
+#' s= stereo parity, h = hydrogen count 1, b = stereo care box, v = valence,
+#' h = h0 designator, r, i = not used, m = atom-atom mapping number,
+#' n = inversion/retention flag, e = exact change flag
 #'
 #' bond block:
-#' 1 = first atom, 2 = second atom, t = bond type, s = stereo type, x = not used, r = bond typology,
-#' c = reacting center status.
+#' 1 = first atom, 2 = second atom, t = bond type, s = stereo type, x = not
+#' used, r = bond typology, c = reacting center status.
 #'
-#' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
+#' @author Eduard Szöcs, \email{eduardszoecs@@gmail.com}
 #' @references Grabner, M., Varmuza, K., & Dehmer, M. (2012). RMol:
 #' a toolset for transforming SD/Molfile structure information into R objects.
-#' Source Code for Biology and Medicine, 7, 12. \url{http://doi.org/10.1186/1751-0473-7-12}
+#' Source Code for Biology and Medicine, 7, 12.
+#' \url{http://doi.org/10.1186/1751-0473-7-12}
 #' @export
 
 parse_mol <- function(string) {
@@ -325,7 +343,8 @@ parse_mol <- function(string) {
   na <- as.numeric(cl[1])
   ab <- m[5:(4 + na)]
   ab <- read.table(text = ab)
-  names(ab) <- c('x', 'y', 'z', 'a', 'd', 'c', 's', 'h', 'b', 'v', 'H', 'm', 'n', 'e')
+  names(ab) <- c('x', 'y', 'z', 'a', 'd', 'c', 's', 'h', 'b', 'v', 'H', 'm',
+                 'n', 'e')
   # bound block
   nb <- as.numeric(cl[2])
   bb <- m[(5 + na):(4 + na + nb)]
@@ -339,7 +358,8 @@ parse_mol <- function(string) {
 #' @description This function attempts to format numeric (or character) vectors
 #' as character vectors of CAS numbers.  If they cannot be converted to CAS
 #' format or don't pass \code{\link{is.cas}}, \code{NA} is returned
-#' @param x numeric vector, or character vector of CAS numbers missing the hyphens
+#' @param x numeric vector, or character vector of CAS numbers missing the
+#' hyphens
 #'
 #' @return character vector of valid CAS numbers
 #' @seealso \code{\link{is.cas}}
@@ -368,7 +388,9 @@ as.cas <- function(x){
 
 
 #' Interactively choose a result from a menu
-#' @description In interactive sessions, prompts a user to choose an element of a vector from a menu. Use this for all functions that return multiple possible results such as multiple identifiers or synonyms.
+#' @description In interactive sessions, prompts a user to choose an element of
+#' a vector from a menu. Use this for all functions that return multiple
+#' possible results such as multiple identifiers or synonyms.
 #' @param x a character vector
 #' @param choices If \code{choices = "all"} then the entire vector \code{x} is
 #' used for the menu.  If numeric > 1, only that number of elements from the
@@ -409,3 +431,77 @@ chooser <- function(x, choices){
   }
   return(out)
 }
+
+#' matcher utility
+#'
+#' @param x a vector
+#' @param query what the query was, only used if match = "best"
+#' @param result what the result of the query was, only used if match = "best
+#' @param match haracter; How should multiple hits be handeled? "all" returns
+#' all matched IDs, "first" only the first match, "best" the best matching (by
+#' name) ID, "ask" is a interactive mode and the user is asked for input, "na"
+#' @param verbose print messages?
+#'
+#' @return
+#' @noRd
+#'
+#' @examples
+#' testids <- c("123", "456", "789")
+#' results <- c("apple", "banana", "orange")
+#' matcher(testids, query = "bananananan", result = results, match = "best")
+matcher <-
+  function(x,
+           query = NULL,
+           result = NULL,
+           match = c("all", "best", "first", "ask", "na"),
+           verbose = FALSE) {
+
+    match <- match.arg(match)
+    names(x) <- result
+
+    if(length(x) == 1) {
+      return(x)
+    } else {
+      if(verbose) {
+        message("More then one Link found for '", query, "'. \n")
+      }
+
+      if(match == "all") {
+        if(verbose) {
+          message("Returning all matches. \n")
+        }
+        return(x)
+
+      } else if (match == "best") {
+        #check that x and result are same length
+        if(length(x) != length(result))
+          stop("Can't use match = 'best' without query matches for each output")
+        if (verbose) {
+          message("Returning best match. \n")
+        }
+        dd <- adist(query, result) / nchar(result)
+        return(x[which.min(dd)])
+      } else if (match == "first") {
+        if (verbose)
+          message("Returning first match. \n")
+        return(x[1])
+
+      } else if (match == "ask" & interactive()) {
+        if (!is.null(result)) {
+          choices <- paste0(result, ": ", x)
+        } else {
+          choices <- x
+        }
+        pick <- menu(choices, graphics = FALSE, "Select one:")
+        return(x[pick])
+
+      } else if (match == "na") {
+        if (verbose) {
+          message("Returning NA. \n")
+        }
+        x <- NA
+        names(x)<-NA
+        return(x)
+      }
+    }
+  }

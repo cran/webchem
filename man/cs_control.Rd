@@ -5,7 +5,7 @@
 \title{Control ChemSpider API requests}
 \usage{
 cs_control(
-  datasources = "Wikidata",
+  datasources = vector(),
   order_by = "recordId",
   order_direction = "ascending",
   include_all = FALSE,
@@ -71,5 +71,5 @@ cs_control(order_direction = "descending")
 \code{\link{get_csid}}
 }
 \author{
-Tamas Stirling, \email{stirling.tamas@gmail.com}
+Tamás Stirling, \email{stirling.tamas@gmail.com}
 }

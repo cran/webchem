@@ -6,7 +6,7 @@
 #' ChemSpider database, you'll need to obtain an API key. Register at
 #' \url{https://developer.rsc.org/} for an API key. Please respect the Terms &
 #' Conditions \url{https://developer.rsc.org/terms}.
-#' @details You can store your API key as \code{CHEMSPIDER_KEY=<your key>} in
+#' @details You can store your API key as \code{CHEMSPIDER_KEY = <your key>} in
 #' .Renviron or as \code{options(chemspider_key = <your key>)} in .Rprofile.
 #' This will allow you to use ChemSpider without adding your API key in the
 #' beginning of each session, and will also allow you to share your analysis
@@ -44,7 +44,7 @@ cs_check_key <- function() {
 #' for an API key. Please respect the Terms & Conditions. The Terms & Conditions
 #' can be found at \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamas Stirling, \email{stirling.tamas@@gmail.com}
+#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @export
 #' @examples
 #' \dontrun{
@@ -101,13 +101,13 @@ cs_datasources <- function(apikey = NULL) {
 #' The controls that are available for a given function are indicated within the
 #' documentation of the function.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamas Stirling, \email{stirling.tamas@@gmail.com}
+#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @seealso \code{\link{get_csid}}
 #' @export
 #' @examples
 #' cs_control()
 #' cs_control(order_direction = "descending")
-cs_control <- function(datasources = "Wikidata",
+cs_control <- function(datasources = vector(),
                        order_by = "recordId", order_direction = "ascending",
                        include_all = FALSE, complexity = "any",
                        isotopic = "any") {
@@ -135,27 +135,38 @@ cs_control <- function(datasources = "Wikidata",
 #' Query one or more compunds by name, formula, SMILES, InChI or InChIKey and
 #' return a vector of ChemSpider IDs.
 #'
-#' @importFrom httr POST add_headers http_status
-#' @importFrom jsonlite toJSON
 #' @param query character; search term.
 #' @param apikey character; your API key. If NULL (default),
-#' \code{cs_check_key()} will look for it in .Renviron or .Rprofile.
+#'   \code{cs_check_key()} will look for it in .Renviron or .Rprofile.
 #' @param from character; the type of the identifier to convert from. Valid
-#' values are \code{"name"}, \code{"formula"}, \code{"smiles"}, \code{"inchi"},
-#' \code{"inchikey"}. The default value is \code{"name"}.
-#' @param control list; see details.
+#'   values are \code{"name"}, \code{"formula"}, \code{"smiles"},
+#'   \code{"inchi"}, \code{"inchikey"}. The default value is \code{"name"}.
+#' @param match character; How should multiple hits be handled?, "all" all
+#'   matches are returned, "best" the best matching is returned, "ask" enters an
+#'   interactive mode and the user is asked for input, "na" returns NA if
+#'   multiple hits are found.
+#' @param verbose logical; should a verbose output be printed on the console?
+#' @param ... furthrer arguments passed to \code{\link{cs_control}}
 #' @details Queries by SMILES, InChI or InChiKey do not use \code{cs_control}
-#' options. Queries by name use \code{order_by} and \code{order_direction}.
-#' Queries by formula also use \code{datasources}. See \code{cs_control()} for a
-#' full list of valid values for these control options.
+#'   options. Queries by name use \code{order_by} and \code{order_direction}.
+#'   Queries by formula also use \code{datasources}. See \code{cs_control()} for
+#'   a full list of valid values for these control options.
 #' @details \code{formula} can be expressed with and without LaTeX syntax.
-#' @return Returns a data frame.
-#' @note An API key is needed. Register at \url{https://developer.rsc.org/}
-#' for an API key. Please respect the Terms & conditions:
-#' \url{https://developer.rsc.org/terms}.
+#' @return Returns a tibble.
+#' @note An API key is needed. Register at \url{https://developer.rsc.org/} for
+#'   an API key. Please respect the Terms & conditions:
+#'   \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
-#' @author Tamas Stirling, \email{stirling.tamas@@gmail.com}
+#' @references Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
+#' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
+#' Information from the Web. Journal of Statistical Software, 93(13).
+#' <doi:10.18637/jss.v093.i13>.
+#' @author Eduard Szöcs, \email{eduardszoecs@@gmail.com}
+#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
+#' @importFrom httr POST add_headers http_status
+#' @importFrom jsonlite toJSON
+#' @importFrom tibble enframe
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -167,28 +178,46 @@ cs_control <- function(datasources = "Wikidata",
 #' get_csid("InChI=1S/C2H4O2/c1-2(3)4/h1H3,(H,3,4)", from = "inchi")
 #' get_csid("QTBSBXVTEAMEQO-UHFFFAOYAR", from = "inchikey")
 #' }
-get_csid <- function(query, from = "name", apikey = NULL,
-                     control = cs_control()) {
+get_csid <- function(query,
+                     from = c("name", "formula", "inchi", "inchikey", "smiles"),
+                     match = c("all", "first", "ask", "na"),
+                     verbose = TRUE,
+                     apikey = NULL,
+                     ...) {
   if (is.null(apikey)) {
     apikey <- cs_check_key()
   }
-  from <- match.arg(from, choices = c("name", "formula", "inchi", "inchikey",
-                                      "smiles"), several.ok = FALSE)
-  out <- lapply(query, function(x) {
-    switch(from,
-           name = cs_name_csid(x, apikey = apikey, control = control),
-           formula = cs_formula_csid(x, apikey = apikey, control = control),
-           inchi = cs_inchi_csid(x, apikey = apikey),
-           inchikey = cs_inchikey_csid(x, apikey = apikey),
-           smiles = cs_smiles_csid(x, apikey = apikey))
-  })
+  from <- match.arg(from)
+  match <- match.arg(match)
+
+  foo <- function(x, from, match, verbose, apikey, ...) {
+    if (is.na(x)) return(NA)
+    res <- switch(from,
+                  name = cs_name_csid(x, apikey = apikey,
+                                      control = cs_control(...)),
+                  formula = cs_formula_csid(x, apikey = apikey,
+                                            control = cs_control(...)),
+                  inchi = cs_inchi_csid(x, apikey = apikey),
+                  inchikey = cs_inchikey_csid(x, apikey = apikey),
+                  smiles = cs_smiles_csid(x, apikey = apikey))
+    res <- matcher(res, query = x, match = match, verbose = verbose)
+    if (length(res) == 0) res <- NA
+    return(res)
+  }
+  out <-
+    lapply(
+      query,
+      foo,
+      from = from,
+      match = match,
+      verbose = verbose,
+      apikey = apikey,
+      ...
+    )
   names(out) <- query
-  out <- data.frame(
-    "csid" = unlist(out),
-    "query" = rep(names(out), times = sapply(out, length)),
-    row.names = NULL,
-    stringsAsFactors = FALSE
-  )
+  out <-
+    lapply(out, enframe, name = NULL, value = "csid") %>%
+    bind_rows(.id = "query")
   return(out)
 }
 
@@ -212,7 +241,7 @@ get_csid <- function(query, from = "name", apikey = NULL,
 #' for an API key.
 #' Please respect the Terms & conditions \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamas Stirling, \email{stirling.tamas@@gmail.com}
+#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @noRd
 cs_query_csid <- function(postres, headers) {
   query_id <- jsonlite::fromJSON(rawToChar(postres$content))$queryId
@@ -284,7 +313,7 @@ cs_query_csid <- function(postres, headers) {
 #' for an API key. Please respect the Terms & conditions
 #' \url{https://developer.rsc.org/terms}.
 #' @references https://developer.rsc.org/compounds-v1/apis
-#' @author Tamas Stirling, \email{stirling.tamas@@gmail.com}
+#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @note This is a low level function and is not exported.
 #' @examples
 #' \dontrun{
@@ -333,7 +362,7 @@ cs_name_csid <- function(name, apikey = NULL, control = cs_control()) {
 #' for an API key. Please respect the Terms & conditions
 #' \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamas Stirling, \email{stirling.tamas@@gmail.com}
+#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @note This is a low level function and is not exported.
 #' @examples
 #' \dontrun{
@@ -378,7 +407,7 @@ cs_formula_csid <- function(formula, apikey = NULL, control = cs_control()) {
 #' for an API key. Please respect the Terms & conditions
 #' \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamas Stirling, \email{stirling.tamas@@gmail.com}
+#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @note This is a low level function and is not exported.
 #' @examples
 #' \dontrun{
@@ -420,7 +449,7 @@ cs_smiles_csid <- function(smiles, apikey = NULL) {
 #' for an API key. Please respect the Terms & conditions
 #' \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamas Stirling, \email{stirling.tamas@@gmail.com}
+#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @note This is a low level function and is not exported.
 #' @examples
 #' \dontrun{
@@ -464,7 +493,7 @@ cs_inchi_csid <- function(inchi, apikey = NULL) {
 #' for an API key. Please respect the Terms & conditions
 #' \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamas Stirling, \email{stirling.tamas@@gmail.com}
+#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @note This is a low level function and is not exported.
 #' @examples
 #' \dontrun{
@@ -519,7 +548,7 @@ cs_inchikey_csid <- function(inchikey, apikey = NULL) {
 #' for an API key. Please respect the Terms & Conditions. The Terms & Conditions
 #' can be found at \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamas Stirling, \email{stirling.tamas@@gmail.com}
+#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @seealso This is a low level function and is not exported. See
 #' \code{\link{cs_convert}} for the top level function.
 #' @seealso \code{\link{parse_mol}}
@@ -583,8 +612,12 @@ cs_convert_multiple <- function(input, from, to, apikey = NULL) {
 #' for an API key. Please respect the Terms & Conditions. The Terms & Conditions
 #' can be found at \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
-#' @author Tamas Stirling, \email{stirling.tamas@@gmail.com}
+#' @references Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
+#' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
+#' Information from the Web. Journal of Statistical Software, 93(13).
+#' <doi:10.18637/jss.v093.i13>.
+#' @author Eduard Szöcs, \email{eduardszoecs@@gmail.com}
+#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @export
 #' @examples
 #' \dontrun{
@@ -627,10 +660,17 @@ cs_convert <- function(query, from, to, apikey = NULL) {
     }
   }
   if (from == "csid") {
-    out <- cs_compinfo(query, fields = to2, apikey = apikey)[, 2]
+    out <- cs_compinfo(query, fields = to2, apikey = apikey)
+    if (ncol(out) == 2) {
+      out <- out[, 2]
+    }
+    else {
+      out <- out[, 1]
+    }
   }
   else {
     out <- unname(sapply(query, function(x) {
+      if (is.na(x)) return(NA)
       switch(cs_convert_router(from, to),
              identity = query,
              cs_convert_multiple = cs_convert_multiple(
@@ -651,6 +691,7 @@ cs_convert <- function(query, from, to, apikey = NULL) {
 #' retrieve the record details for your query.
 #' @importFrom jsonlite toJSON
 #' @importFrom httr POST add_headers
+#' @importFrom dplyr left_join
 #' @param csid numeric; can be obtained using \code{\link{get_csid}}
 #' @param fields character; see details.
 #' @param apikey character; your API key. If NULL (default),
@@ -667,7 +708,7 @@ cs_convert <- function(query, from, to, apikey = NULL) {
 #' for an API key. Please respect the Terms & Conditions. The Terms & Conditions
 #' can be found at \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamas Stirling, \email{stirling.tamas@@gmail.com}
+#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @export
 #' @examples
 #' \dontrun{
@@ -675,6 +716,7 @@ cs_convert <- function(query, from, to, apikey = NULL) {
 #' cs_compinfo(171:182, "SMILES")
 #' }
 cs_compinfo <- function(csid, fields, apikey = NULL) {
+  if (mean(is.na(csid)) == 1) return(data.frame(id = NA))
   if (is.null(apikey)) {
     apikey <- cs_check_key()
   }
@@ -691,7 +733,7 @@ cs_compinfo <- function(csid, fields, apikey = NULL) {
   )
   headers <- c("Content-Type" = "", "apikey" = apikey)
   body <- list(
-    "recordIds" = csid, "fields" = fields
+    "recordIds" = csid[!is.na(csid)], "fields" = fields
   )
   body <- jsonlite::toJSON(body)
   postres <- httr::POST(
@@ -699,7 +741,10 @@ cs_compinfo <- function(csid, fields, apikey = NULL) {
     httr::add_headers(.headers = headers), body = body
   )
   if (postres$status_code == 200) {
-    out <- jsonlite::fromJSON(rawToChar(postres$content))$records
+    res <- jsonlite::fromJSON(rawToChar(postres$content))$records
+    if (length(res) == 0) return(data.frame(id = NA))
+    out <- data.frame(id = csid)
+    out <- dplyr::left_join(out, res, by = "id")
     return(out)
   }
   else {
@@ -725,7 +770,7 @@ cs_compinfo <- function(csid, fields, apikey = NULL) {
 #' for a security token.
 #' Please respect the Terms & conditions
 #' \url{https://www.rsc.org/help-legal/legal/terms-conditions/}.
-#' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
+#' @author Eduard Szöcs, \email{eduardszoecs@@gmail.com}
 #' @seealso \code{\link{get_csid}} to retrieve ChemSpider IDs,
 #' \code{\link{cs_compinfo}} for extended compound information.
 #' @note use \code{\link{cs_compinfo}} to retrieve standard inchikey.

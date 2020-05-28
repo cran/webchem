@@ -4,19 +4,31 @@
 #' @param x object
 #' @param ... currently not used.
 #' @return a vector.
+#' @references Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
+#' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
+#' Information from the Web. Journal of Statistical Software, 93(13).
+#' <doi:10.18637/jss.v093.i13>.
 #' @export
 cas <- function(x, ...){
   UseMethod("cas")
 }
 
-
+# CAS ---------------------------------------------------------------------
 #' @export
 cas.default <- function(x, ...) {
+  stop(paste("No cas method for class", class(x)))
+}
+#' @export
+cas.chebi_comp_entity <- function(x, ...) {
   sapply(x, function(y) {
-    if (length(y) == 1 && is.na(y))
-      return(NA)
-    y$cas
-    })
+    if (length(y) == 1 && is.na(y)) return(NA)
+    unique(y$regnumbers$data[y$regnumbers$type == "CAS Registry Number"])
+  })
+}
+
+#' @export
+cas.opsin_query <- function(x, ...) {
+  stop("CAS is not returned by this datasource!")
 }
 
 #' @export
@@ -25,10 +37,29 @@ cas.pan_query <- function(x, ...) {
 }
 
 #' @export
+cas.aw_query <- function(x, ...) {
+  sapply(x, function(y) y$cas)
+}
+
+#' @export
 cas.wd_ident <- function(x, ...) {
   x$cas
 }
 
+
+#' @export
+cas.cts_compinfo <- function(x, ...) {
+  stop("CAS is not returned by this data source")
+}
+
+#' @export
+cas.etox_basic <- function(x, ...) {
+  sapply(x, function(y) {
+    if (length(y) == 1 && is.na(y))
+      return(NA)
+    unique(y$cas)
+  })
+}
 
 
 # InChIKey ----------------------------------------------------------------
@@ -37,19 +68,28 @@ cas.wd_ident <- function(x, ...) {
 inchikey <- function(x, ...){
   UseMethod("inchikey")
 }
+
 #' @export
 inchikey.default <- function(x, ...) {
-  sapply(x, function(y) y$inchikey)
-}
-#' @export
-inchikey.cs_compinfo <- function(x, ...) {
-  x$inchikey
+  stop(paste("No inchikey method for class", class(x)))
 }
 
 #' @export
-inchikey.cs_extcompinfo <- function(x, ...) {
-  x$inchikey
+inchikey.aw_query <- function(x, ...) {
+  sapply(x, function(y) {
+    if (length(y) == 1 && is.na(y)) return(NA)
+    y$inchikey
+  })
 }
+
+#' @export
+inchikey.chebi_comp_entity <- function(x, ...) {
+  sapply(x, function (y) {
+    if (length(y) == 1 && is.na(y)) return(NA)
+    y$properties$inchikey
+  })
+}
+
 
 #' @export
 inchikey.etox_basic <- function(x, ...) {
@@ -60,12 +100,10 @@ inchikey.pan_query <- function(x, ...) {
   stop("InChIkey is not returned by this datasource!")
 }
 
-
 #' @export
 inchikey.opsin_query <- function(x, ...) {
   x$stdinchikey
 }
-
 #' @export
 inchikey.pc_prop <- function(x, ...) {
   if (!"InChIKey" %in% names(x)) {
@@ -73,12 +111,15 @@ inchikey.pc_prop <- function(x, ...) {
   }
   x$InChIKey
 }
-
 #' @export
 inchikey.wd_ident <- function(x, ...) {
   x$inchikey
 }
 
+#' @export
+inchikey.cts_compinfo <- function(x, ...) {
+  sapply(x, function(x) x$inchikey)
+}
 
 # SMILES ------------------------------------------------------------------
 #' @rdname extractors
@@ -86,19 +127,17 @@ inchikey.wd_ident <- function(x, ...) {
 smiles <- function(x, ...){
   UseMethod("smiles")
 }
+
 #' @export
 smiles.default <- function(x, ...) {
-  sapply(x, function(y) y$smiles)
+  stop(paste("no smiles method for class", class(x)))
 }
-
 #' @export
-smiles.cs_compinfo <- function(x, ...) {
-  x$smiles
-}
-
-#' @export
-smiles.cs_extcompinfo <- function(x, ...) {
-  x$smiles
+smiles.chebi_comp_entity <- function(x, ...) {
+  sapply(x, function(y) {
+    if (length(y) == 1 && is.na(y)) return(NA)
+    y$properties$smiles
+  })
 }
 
 
@@ -106,7 +145,6 @@ smiles.cs_extcompinfo <- function(x, ...) {
 smiles.cts_compinfo <- function(x, ...) {
   stop("SMILES is not returned by this datasource!")
 }
-
 #' @export
 smiles.etox_basic <- function(x, ...) {
   stop("InChIkey is not returned by this datasource!")
@@ -115,7 +153,6 @@ smiles.etox_basic <- function(x, ...) {
 smiles.pan_query <- function(x, ...) {
   stop("SMILES is not returned by this datasource!")
 }
-
 #' @export
 smiles.opsin_query <- function(x, ...) {
   x$smiles
@@ -124,7 +161,6 @@ smiles.opsin_query <- function(x, ...) {
 smiles.aw_query <- function(x, ...) {
   stop("SMILES is not returned by this datasource!")
 }
-
 #' @export
 smiles.pc_prop <- function(x, ...) {
   if (!"CanonicalSMILES" %in% names(x)) {
@@ -132,9 +168,7 @@ smiles.pc_prop <- function(x, ...) {
   }
   x$CanonicalSMILES
 }
-
 #' @export
 smiles.wd_ident <- function(x, ...) {
   x$smiles
 }
-

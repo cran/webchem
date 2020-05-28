@@ -7,7 +7,7 @@
 get_chebiid(
   query,
   from = "ALL",
-  match = "all",
+  match = c("all", "best", "ask", "na"),
   max_res = 200,
   stars = "ALL",
   verbose = TRUE,
@@ -64,8 +64,8 @@ get_chebiid(comp)
 \references{
 Hastings J, Owen G, Dekker A, Ennis M, Kale N, Muthukrishnan V,
   Turner S, Swainston N, Mendes P, Steinbeck C. (2016). ChEBI in 2016:
-  Improved services and an expanding collection of metabfolites. Nucleic Acids
-  Res.
+  Improved services and an expanding collection of metabfolites. Nucleic
+  Acids Res.
 
   Hastings, J., de Matos, P., Dekker, A., Ennis, M., Harsha, B., Kale, N.,
   Muthukrishnan, V., Owen, G., Turner, S., Williams, M., and Steinbeck, C.
@@ -83,7 +83,12 @@ Hastings J, Owen G, Dekker A, Ennis M, Kale N, Muthukrishnan V,
   McNaught, A., Alcántara, R., Darsow, M., Guedj, M. and Ashburner, M. (2008)
   ChEBI: a database and ontology for chemical entities of biological
   interest. Nucleic Acids Res. 36, D344–D350.
+
+Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
+Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
+Information from the Web. Journal of Statistical Software, 93(13).
+<doi:10.18637/jss.v093.i13>.
 }
 \author{
-Andreas Scharmueller, \email{andschar@protonmail.com}
+Andreas Scharmüller, \email{andschar@protonmail.com}
 }

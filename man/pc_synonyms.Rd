@@ -17,21 +17,24 @@ pc_synonyms(
 \arguments{
 \item{query}{character; search term.}
 
-\item{from}{character; type of input, can be one of 'name' (default), 'cid',
-'sid', 'aid', 'smiles', 'inchi', 'inchikey'}
+\item{from}{character; type of input, can be one of "name" (default), "cid",
+"sid", "aid", "smiles", "inchi", "inchikey"}
 
-\item{choices}{to get only the first synonym, use \code{choices = 1}, to get a number of synonyms to choose from in an interactive menu, provide the number of choices you want or "all" to choose from all synonyms.}
+\item{choices}{to get only the first synonym, use \code{choices = 1}, to get
+a number of synonyms to choose from in an interactive menu, provide the
+number of choices you want or "all" to choose from all synonyms.}
 
 \item{verbose}{logical; should a verbose output be printed on the console?}
 
-\item{arg}{character; optinal arguments like 'name_type=word' to match individual words.}
+\item{arg}{character; optinal arguments like "name_type=word" to match
+individual words.}
 
 \item{interactive}{deprecated.  Use the \code{choices} argument instead}
 
 \item{...}{optional arguments}
 }
 \value{
-a character vector.
+a list of character vectors (one per query). If \code{choices} is used, a single named vector is returned instead.
 }
 \description{
 Search synonyms using PUG-REST,
@@ -39,29 +42,35 @@ see \url{https://pubchem.ncbi.nlm.nih.gov/}.
 }
 \note{
 Please respect the Terms and Conditions of the National Library of
-Medicine, \url{https://www.nlm.nih.gov/databases/download.html} and the data
+Medicine, \url{https://www.nlm.nih.gov/databases/download.html} the data
 usage policies of National Center for Biotechnology Information,
 \url{https://www.ncbi.nlm.nih.gov/home/about/policies/},
-\url{https://pubchemdocs.ncbi.nlm.nih.gov/programmatic-access}.
+\url{https://pubchemdocs.ncbi.nlm.nih.gov/programmatic-access}, and the data
+usage policies of the indicidual data sources
+\url{https://pubchem.ncbi.nlm.nih.gov/sources/}.
 }
 \examples{
 \donttest{
-pc_synonyms('Aspirin')
-pc_synonyms(c('Aspirin', 'Triclosan'))
-pc_synonyms(5564, from = 'cid')
-pc_synonyms(c('Aspirin', 'Triclosan'), choices = 10)
+pc_synonyms("Aspirin")
+pc_synonyms(c("Aspirin", "Triclosan"))
+pc_synonyms(5564, from = "cid")
+pc_synonyms(c("Aspirin", "Triclosan"), choices = 10)
 }
 }
 \references{
-Wang, Y., J. Xiao, T. O. Suzek, et al. 2009 PubChem: A Public Information System for
-Analyzing Bioactivities of Small Molecules. Nucleic Acids Research 37: 623–633.
+Wang, Y., J. Xiao, T. O. Suzek, et al. 2009 PubChem: A Public
+Information System for
+Analyzing Bioactivities of Small Molecules. Nucleic Acids Research 37:
+623–633.
 
 Kim, Sunghwan, Paul A. Thiessen, Evan E. Bolton, et al. 2016
-PubChem Substance and Compound Databases. Nucleic Acids Research 44(D1): D1202–D1213.
+PubChem Substance and Compound Databases. Nucleic Acids Research 44(D1):
+D1202–D1213.
 
 Kim, S., Thiessen, P. A., Bolton, E. E., & Bryant, S. H. (2015).
-PUG-SOAP and PUG-REST: web services for programmatic access to chemical information in PubChem. Nucleic acids research, gkv396.
+PUG-SOAP and PUG-REST: web services for programmatic access to chemical
+information in PubChem. Nucleic acids research, gkv396.
 }
 \author{
-Eduard Szoecs, \email{eduardszoecs@gmail.com}
+Eduard Szöcs, \email{eduardszoecs@gmail.com}
 }

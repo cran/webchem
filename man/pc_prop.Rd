@@ -9,9 +9,11 @@ pc_prop(cid, properties = NULL, verbose = TRUE, ...)
 \arguments{
 \item{cid}{character; Pubchem ID (CID).}
 
-\item{properties}{character vector; properties to retrieve, e.g. c('MolecularFormula', 'MolecularWeight').
-If NULL (default) all available properties are retrieved.
-See \url{https://pubchem.ncbi.nlm.nih.gov/pug_rest/PUG_REST.html#_Toc409516770} for a list of all available properties.}
+\item{properties}{character vector; properties to retrieve, e.g.
+c("MolecularFormula", "MolecularWeight"). If NULL (default) all available
+properties are retrieved. See
+\url{https://pubchem.ncbi.nlm.nih.gov/pug_rest/PUG_REST.html#_Toc409516770}
+for a list of all available properties.}
 
 \item{verbose}{logical; should a verbose output be printed to the console?}
 
@@ -21,14 +23,17 @@ See \url{https://pubchem.ncbi.nlm.nih.gov/pug_rest/PUG_REST.html#_Toc409516770} 
 a data.frame
 }
 \description{
-Retrieve compound information from pubchem CID, see \url{https://pubchem.ncbi.nlm.nih.gov/}
+Retrieve compound information from pubchem CID, see
+\url{https://pubchem.ncbi.nlm.nih.gov/}
 }
 \note{
 Please respect the Terms and Conditions of the National Library of
-Medicine, \url{https://www.nlm.nih.gov/databases/download.html} and the data
+Medicine, \url{https://www.nlm.nih.gov/databases/download.html} the data
 usage policies of National Center for Biotechnology Information,
 \url{https://www.ncbi.nlm.nih.gov/home/about/policies/},
-\url{https://pubchemdocs.ncbi.nlm.nih.gov/programmatic-access}.
+\url{https://pubchemdocs.ncbi.nlm.nih.gov/programmatic-access}, and the data
+usage policies of the indicidual data sources
+\url{https://pubchem.ncbi.nlm.nih.gov/sources/}.
 }
 \examples{
 \donttest{
@@ -37,24 +42,34 @@ pc_prop(5564)
 
 ###
 # multiple CIDS
-comp <- c('Triclosan', 'Aspirin')
-cids <- unlist(get_cid(comp))
-pc_prop(cids, properties = c('MolecularFormula', 'MolecularWeight', 'CanonicalSMILES'))
+comp <- c("Triclosan", "Aspirin")
+cids <- get_cid(comp)
+pc_prop(cids$cid, properties = c("MolecularFormula", "MolecularWeight",
+"CanonicalSMILES"))
 }
 }
 \references{
-Wang, Y., J. Xiao, T. O. Suzek, et al. 2009 PubChem: A Public Information System for
-Analyzing Bioactivities of Small Molecules. Nucleic Acids Research 37: 623–633.
+Wang, Y., J. Xiao, T. O. Suzek, et al. 2009 PubChem: A Public
+Information System for
+Analyzing Bioactivities of Small Molecules. Nucleic Acids Research 37:
+623–633.
 
 Kim, Sunghwan, Paul A. Thiessen, Evan E. Bolton, et al. 2016
-PubChem Substance and Compound Databases. Nucleic Acids Research 44(D1): D1202–D1213.
+PubChem Substance and Compound Databases. Nucleic Acids Research 44(D1):
+D1202–D1213.
 
 Kim, S., Thiessen, P. A., Bolton, E. E., & Bryant, S. H. (2015).
-PUG-SOAP and PUG-REST: web services for programmatic access to chemical information in PubChem. Nucleic acids research, gkv396.
+PUG-SOAP and PUG-REST: web services for programmatic access to chemical
+information in PubChem. Nucleic acids research, gkv396.
+
+Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
+Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
+Information from the Web. Journal of Statistical Software, 93(13).
+<doi:10.18637/jss.v093.i13>.
 }
 \seealso{
-\code{\link{get_cid}} to retrieve Pubchem IDs.
+\code{\link{get_cid}}, \code{\link{pc_sect}}
 }
 \author{
-Eduard Szoecs, \email{eduardszoecs@gmail.com}
+Eduard Szöcs, \email{eduardszoecs@gmail.com}
 }

@@ -4,7 +4,12 @@
 \alias{aw_query}
 \title{Query http://www.alanwood.net/pesticides}
 \usage{
-aw_query(query, type = c("commonname", "cas"), verbose = TRUE, idx = NULL)
+aw_query(
+  query,
+  type = c("commonname", "cas"),
+  verbose = TRUE,
+  force_build = FALSE
+)
 }
 \arguments{
 \item{query}{character; search string}
@@ -13,19 +18,22 @@ aw_query(query, type = c("commonname", "cas"), verbose = TRUE, idx = NULL)
 
 \item{verbose}{logical; print message during processing to console?}
 
-\item{idx}{data.frame; index to use. If NULL (default) the internal index \code{\link{aw_idx}} is used.
-To rebuild the index use \code{\link{build_aw_idx}}.}
+\item{force_build}{logical; force building a new index? See
+\code{\link{build_aw_idx}} for more details.}
 }
 \value{
-A list of eight entries: common-name, status, preferredd IUPAC Name,
-         IUPAC Name, cas, formula, activity, subactivity, inchikey, inchi and source url.
+A list of eight entries: common-name, status, preferred IUPAC Name,
+IUPAC Name, cas, formula, activity, subactivity, inchikey, inchi and source
+url.
 }
 \description{
-Query Alan Woods Compendium of Pesticide Common Names \url{http://www.alanwood.net/pesticides}
+Query Alan Woods Compendium of Pesticide Common Names
+\url{http://www.alanwood.net/pesticides}
 }
 \note{
 for type = 'cas' only the first matched link is returned.
-Please respect Copyright, Terms and Conditions \url{http://www.alanwood.net/pesticides/legal.html}!
+Please respect Copyright, Terms and Conditions
+\url{http://www.alanwood.net/pesticides/legal.html}!
 }
 \examples{
 \dontrun{
@@ -39,6 +47,15 @@ sapply(out, function(y) y$subactivity[1])
 aw_query("79622-59-6", type = 'cas')
 }
 }
+\references{
+Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
+Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
+Information from the Web. Journal of Statistical Software, 93(13).
+<doi:10.18637/jss.v093.i13>.
+}
+\seealso{
+\code{\link{build_aw_idx}}
+}
 \author{
-Eduard Szoecs, \email{eduardszoecs@gmail.com}
+Eduard Szöcs, \email{eduardszoecs@gmail.com}
 }

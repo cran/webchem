@@ -95,7 +95,7 @@
 #' \url{http://cactus.nci.nih.gov/blog/?p=1386}, \cr
 #' \url{http://cactus.nci.nih.gov/blog/?p=1456}, \cr
 #'
-#' @author Eduard Szoecs, \email{eduardszoecs@@gmail.com}
+#' @author Eduard Szöcs, \email{eduardszoecs@@gmail.com}
 #'
 #' @examples
 #' \donttest{
@@ -114,6 +114,10 @@
 #' @export
 cir_query <- function(identifier, representation = 'smiles', resolver = NULL,
                       first = FALSE, choices = NULL, verbose = TRUE, ...){
+  if (first == TRUE) {
+    message("`first` is deprecated.  Using `choices = 1` instead.")
+    choices = 1
+  }
   foo <- function(identifier, representation, resolver, first, verbose) {
     if (is.na(identifier)) {
       return(NA)

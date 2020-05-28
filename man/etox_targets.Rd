@@ -12,30 +12,38 @@ etox_targets(id, verbose = TRUE)
 \item{verbose}{logical; print message during processing to console?}
 }
 \value{
-A list of lists of two: \code{res} a data.frame with quality targets from the ETOX database, and source_url.
+A list of lists of two: \code{res} a data.frame with quality targets
+  from the ETOX database, and source_url.
 }
 \description{
-Query ETOX: Information System Ecotoxicology and Environmental Quality Targets
-\url{https://webetox.uba.de/webETOX/index.do} for quality targets
+Query ETOX: Information System Ecotoxicology and Environmental Quality
+Targets \url{https://webetox.uba.de/webETOX/index.do} for quality targets
 }
 \note{
 Before using this function, please read the disclaimer
-\url{https://webetox.uba.de/webETOX/disclaimer.do}.
+  \url{https://webetox.uba.de/webETOX/disclaimer.do}.
 }
 \examples{
 \dontrun{
 id <- get_etoxid('Triclosan', match = 'best')
-out <- etox_targets(id)
+out <- etox_targets(id$etoxid)
 out[ , c('Substance', 'CAS_NO', 'Country_or_Region', 'Designation',
 'Value_Target_LR', 'Unit')]
 etox_targets( c("20179", "9051"))
 
 }
 }
+\references{
+Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
+Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
+Information from the Web. Journal of Statistical Software, 93(13).
+<doi:10.18637/jss.v093.i13>.
+}
 \seealso{
-\code{\link{get_etoxid}} to retrieve ETOX IDs, \code{\link{etox_basic}} for basic information,
-\code{\link{etox_targets}} for quality targets and \code{\link{etox_tests}} for test results
+\code{\link{get_etoxid}} to retrieve ETOX IDs,
+  \code{\link{etox_basic}} for basic information, \code{\link{etox_targets}}
+  for quality targets and \code{\link{etox_tests}} for test results
 }
 \author{
-Eduard Szoecs, \email{eduardszoecs@gmail.com}
+Eduard Szöcs, \email{eduardszoecs@gmail.com}
 }
