@@ -44,7 +44,6 @@ cs_check_key <- function() {
 #' for an API key. Please respect the Terms & Conditions. The Terms & Conditions
 #' can be found at \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @export
 #' @examples
 #' \dontrun{
@@ -101,7 +100,6 @@ cs_datasources <- function(apikey = NULL) {
 #' The controls that are available for a given function are indicated within the
 #' documentation of the function.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @seealso \code{\link{get_csid}}
 #' @export
 #' @examples
@@ -161,8 +159,6 @@ cs_control <- function(datasources = vector(),
 #' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
 #' Information from the Web. Journal of Statistical Software, 93(13).
 #' <doi:10.18637/jss.v093.i13>.
-#' @author Eduard Szöcs, \email{eduardszoecs@@gmail.com}
-#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @importFrom httr POST add_headers http_status
 #' @importFrom jsonlite toJSON
 #' @importFrom tibble enframe
@@ -191,7 +187,7 @@ get_csid <- function(query,
   match <- match.arg(match)
 
   foo <- function(x, from, match, verbose, apikey, ...) {
-    if (is.na(x)) return(NA)
+    if (is.na(x)) return(NA_integer_)
     res <- switch(from,
                   name = cs_name_csid(x, apikey = apikey,
                                       control = cs_control(...)),
@@ -200,8 +196,10 @@ get_csid <- function(query,
                   inchi = cs_inchi_csid(x, apikey = apikey),
                   inchikey = cs_inchikey_csid(x, apikey = apikey),
                   smiles = cs_smiles_csid(x, apikey = apikey))
-    res <- matcher(res, query = x, match = match, verbose = verbose)
-    if (length(res) == 0) res <- NA
+    if(length(res) > 1) {
+      res <- matcher(res, query = x, match = match, from = from, verbose = verbose)
+    }
+    if (length(res) == 0) res <- NA_integer_
     return(res)
   }
   out <-
@@ -241,7 +239,6 @@ get_csid <- function(query,
 #' for an API key.
 #' Please respect the Terms & conditions \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @noRd
 cs_query_csid <- function(postres, headers) {
   query_id <- jsonlite::fromJSON(rawToChar(postres$content))$queryId
@@ -313,7 +310,6 @@ cs_query_csid <- function(postres, headers) {
 #' for an API key. Please respect the Terms & conditions
 #' \url{https://developer.rsc.org/terms}.
 #' @references https://developer.rsc.org/compounds-v1/apis
-#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @note This is a low level function and is not exported.
 #' @examples
 #' \dontrun{
@@ -362,7 +358,6 @@ cs_name_csid <- function(name, apikey = NULL, control = cs_control()) {
 #' for an API key. Please respect the Terms & conditions
 #' \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @note This is a low level function and is not exported.
 #' @examples
 #' \dontrun{
@@ -407,7 +402,6 @@ cs_formula_csid <- function(formula, apikey = NULL, control = cs_control()) {
 #' for an API key. Please respect the Terms & conditions
 #' \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @note This is a low level function and is not exported.
 #' @examples
 #' \dontrun{
@@ -449,7 +443,6 @@ cs_smiles_csid <- function(smiles, apikey = NULL) {
 #' for an API key. Please respect the Terms & conditions
 #' \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @note This is a low level function and is not exported.
 #' @examples
 #' \dontrun{
@@ -493,7 +486,6 @@ cs_inchi_csid <- function(inchi, apikey = NULL) {
 #' for an API key. Please respect the Terms & conditions
 #' \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @note This is a low level function and is not exported.
 #' @examples
 #' \dontrun{
@@ -548,7 +540,6 @@ cs_inchikey_csid <- function(inchikey, apikey = NULL) {
 #' for an API key. Please respect the Terms & Conditions. The Terms & Conditions
 #' can be found at \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @seealso This is a low level function and is not exported. See
 #' \code{\link{cs_convert}} for the top level function.
 #' @seealso \code{\link{parse_mol}}
@@ -616,8 +607,6 @@ cs_convert_multiple <- function(input, from, to, apikey = NULL) {
 #' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
 #' Information from the Web. Journal of Statistical Software, 93(13).
 #' <doi:10.18637/jss.v093.i13>.
-#' @author Eduard Szöcs, \email{eduardszoecs@@gmail.com}
-#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @export
 #' @examples
 #' \dontrun{
@@ -708,7 +697,6 @@ cs_convert <- function(query, from, to, apikey = NULL) {
 #' for an API key. Please respect the Terms & Conditions. The Terms & Conditions
 #' can be found at \url{https://developer.rsc.org/terms}.
 #' @references \url{https://developer.rsc.org/compounds-v1/apis}
-#' @author Tamás Stirling, \email{stirling.tamas@@gmail.com}
 #' @export
 #' @examples
 #' \dontrun{
@@ -770,7 +758,6 @@ cs_compinfo <- function(csid, fields, apikey = NULL) {
 #' for a security token.
 #' Please respect the Terms & conditions
 #' \url{https://www.rsc.org/help-legal/legal/terms-conditions/}.
-#' @author Eduard Szöcs, \email{eduardszoecs@@gmail.com}
 #' @seealso \code{\link{get_csid}} to retrieve ChemSpider IDs,
 #' \code{\link{cs_compinfo}} for extended compound information.
 #' @note use \code{\link{cs_compinfo}} to retrieve standard inchikey.
@@ -829,4 +816,71 @@ use 'cs_commpinfo()' instead.")
   out <- data.frame(t(apply(out, 1, unlist)), stringsAsFactors = FALSE)
   class(out) <- c('cs_extcompinfo', 'data.frame')
   return(out)
+}
+
+#' Download images from ChemSpider
+#'
+#' @description Retrieve images of substances from ChemSpider and export them
+#' in PNG format.
+#' @param csid numeric; the ChemSpider ID (CSID) of the substance. This will
+#' also be the name of the image file.
+#' @param dir character; the download directory. \code{dir} accepts both
+#' absolute and relative paths.
+#' @param overwrite logical; should existing files in the directory with the
+#' same name be overwritten?
+#' @param apikey character; your API key. If NULL (default),
+#' \code{cs_check_key()} will look for it in .Renviron or .Rprofile.
+#' @param verbose logical; should a verbose output be printed on the console?
+#' @note An API key is needed. Register at \url{https://developer.rsc.org/}
+#' for an API key. Please respect the Terms & Conditions. The Terms & Conditions
+#' can be found at \url{https://developer.rsc.org/terms}.
+#' @references \url{https://developer.rsc.org/compounds-v1/apis}
+#' @seealso \code{\link{get_csid}}, \code{\link{cs_check_key}}
+#' @importFrom httr GET add_headers message_for_status content
+#' @importFrom jsonlite fromJSON
+#' @importFrom base64enc base64decode
+#' @export
+#' @examples
+#' \dontrun{
+#' cs_img(c(582, 682), dir = tempdir())
+#' }
+cs_img <- function(csid,
+                   dir,
+                   overwrite = TRUE,
+                   apikey = NULL,
+                   verbose = TRUE) {
+  overwrite <- match.arg(as.character(overwrite), choices = c(TRUE, FALSE))
+  if (is.null(apikey)) {
+    apikey <- cs_check_key()
+  }
+  verbose <- match.arg(as.character(verbose), choices = c(TRUE, FALSE))
+  foo <- function(csid, dir = dir, overwrite = overwrite, apikey = apikey,
+                  verbose = verbose) {
+    if (verbose) message("Searching ", csid, ". ", appendLF = FALSE)
+    if (is.na(csid)) {
+      if (verbose) {
+        message("Invalid input.")
+      }
+      return(tibble(query = csid, path = NA))
+    }
+    else {
+      path <- paste0(dir, "/", csid, ".png")
+      url <- paste0("https://api.rsc.org/compounds/v1/records/", csid, "/image")
+      headers <- c("Content-Type" = "", "apikey" = apikey)
+      res <- httr::GET(url, httr::add_headers(.headers = headers))
+      if (verbose) message(httr::message_for_status(res))
+      if (res$status_code < 300) {
+        cont <- httr::content(res, type = "image", encoding = "base64")
+        cont <- unlist(jsonlite::fromJSON(rawToChar(cont)))
+        cont <- base64enc::base64decode(cont)
+        if (overwrite) {
+          writeBin(cont, path)
+        }
+        else {
+          if (!file.exists(path)) writeBin(cont, path)
+        }
+      }
+    }
+  }
+  out <- lapply(csid, function(x) foo(x, dir, overwrite, apikey, verbose))
 }

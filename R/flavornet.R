@@ -1,18 +1,18 @@
 #' Retrieve flavor percepts from www.flavornet.org
 #'
 #' Retreive flavor percepts from \url{http://www.flavornet.org}.  Flavornet is a database of 738 compounds with odors
-#' perceptible to humans detected using gas chromatography ofactometry (GCO).
+#' perceptible to humans detected using gas chromatography olfactometry (GCO).
 #'
 #' @import xml2
 #' @importFrom stats rgamma
-#'
-#' @param CAS character; CAS number to search by. See \code{\link{is.cas}} for correct formatting
+#' @param query character; CAS number to search by. See \code{\link{is.cas}} for correct formatting
+#' @param from character; currently only CAS numbers are accepted.
 #' @param verbose logical; should a verbose output be printed on the console?
-#' @param ... not currently used
+#' @param CAS deprecated
+#' @param ... currently unused
 #'
 #' @return A named character vector containing flavor percepts or NA's in the case of CAS numbers that are not found
 #'
-#' @author Eric Scott, \email{eric.scott@@tufts.edu}
 #'
 #' @examples
 #' \dontrun{
@@ -24,25 +24,46 @@
 #' }
 #' @export
 
-fn_percept <- function(CAS, verbose = TRUE, ...)
+fn_percept <- function(query, from = "cas", verbose = TRUE, CAS, ...)
 {
-  foo <- function (CAS, verbose){
-    on.exit(suppressWarnings(closeAllConnections()))
-    qurl <- paste0("http://www.flavornet.org/info/",CAS,".html")
-    if (verbose)
-      message(qurl)
-    Sys.sleep(rgamma(1, shape = 10, scale = 1/10))
-    h <- try(read_html(qurl), silent = TRUE)
-    if (inherits(h, "try-error")) {
-      warning("CAS not found... Returning NA.")
+
+  if (!ping_service("fn")) stop(webchem_message("service_down"))
+
+  if (!missing(CAS)) {
+    message('"CAS" is now deprecated. Please use "query" instead. ')
+    query <- CAS
+  }
+  match.arg(from)
+  foo <- function (query, verbose){
+    if (is.na(query)) {
+      if (verbose) webchem_message("na")
       return(NA)
     }
-    doc.text = xml_text(xml_find_all(h, "/html/body/p[3]"))
-    pattern = "Percepts: "
-    percept <- gsub(pattern, "", doc.text)
-    return(percept)
+    qurl <- paste0("http://www.flavornet.org/info/",query,".html")
+    if(verbose) webchem_message("query", query, appendLF = FALSE)
+    Sys.sleep(stats::rgamma(1, shape = 10, scale = 1/10))
+    res <- try(httr::RETRY("GET",
+                           qurl,
+                           httr::user_agent(webchem_url()),
+                           terminate_on = 404,
+                           quiet = TRUE), silent = TRUE)
+    if (inherits(res, "try-error")) {
+      if (verbose) webchem_message("service_down")
+      return(NA)
+    }
+    if (verbose) message(httr::message_for_status(res))
+    if (res$status_code == 200){
+      h <- read_html(res)
+      doc.text = xml_text(xml_find_all(h, "/html/body/p[3]"))
+      pattern = "Percepts: "
+      percept <- gsub(pattern, "", doc.text)
+      return(percept)
+    }
+    else {
+      return(NA)
+    }
   }
-  percepts <- sapply(CAS, foo, verbose = verbose)
-  percepts <- setNames(percepts, CAS)
+  percepts <- sapply(query, foo, verbose = verbose)
+  percepts <- setNames(percepts, query)
   return(percepts)
 }

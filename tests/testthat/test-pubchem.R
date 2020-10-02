@@ -71,6 +71,13 @@ test_that("get_cid()", {
                        domain = "substance")$cid[1], "102361739")
 })
 
+test_that("get_cid() handles special characters in SMILES", {
+  skip_on_cran()
+  skip_if_not(up, "PubChem service is down")
+
+  expect_equal(get_cid("C#C", from = "smiles")$cid, "6326")
+})
+
 test_that("pc_prop", {
   skip_on_cran()
   skip_if_not(up, "PubChem service is down")
@@ -87,10 +94,10 @@ test_that("pc_synonyms", {
   skip_on_cran()
   skip_if_not(up, "PubChem service is down")
   expect_equivalent(pc_synonyms(NA), NA)
-  expect_equal(pc_synonyms("Triclosan")[[1]][1], "5564")
+  expect_equal(pc_synonyms("Acetyl Salicylic Acid")[[1]][1], "aspirin")
   expect_equal(length(pc_synonyms(c("Triclosan", "Aspirin"))), 2)
   expect_equal(pc_synonyms("BPGDAMSIGCZZLK-UHFFFAOYSA-N",
-                           from = "inchikey")[[1]][1], "12345")
+                           from = "inchikey")[[1]][1], "Methylene diacetate")
   expect_true(is.na(suppressWarnings(pc_synonyms("xxxx"))[[1]]))
 })
 
@@ -142,13 +149,12 @@ test_that("pc_sect()", {
 
   a <- pc_sect(c(311, 176, 1118, "balloon", NA), "pKa")
   expect_s3_class(a, c("tbl_df", "tbl", "data.frame"))
-  expect_equal(names(a), c("CID", "Name", "Result", "SourceName", "SourceID"))
-  expect_equal(a$CID, c("311", "176", "1118", "balloon", NA))
-  expect_equal(a$Name, c("Citric acid", "Acetic acid", NA, NA, NA))
-  expect_equal(a$Result, c("2.79", "4.76 (at 25 °C)", NA, NA, NA))
-  expect_equal(a$SourceName, c("DrugBank", "DrugBank", NA, NA, NA))
-  expect_equal(a$SourceID, c("DB04272", "DB03166", NA, NA, NA))
-
+  expect_equal(mean(c("Citric acid", "Acetic acid", NA) %in% a$Name), 1)
+  expect_equal(mean(c("2.79", "pKa3 6.43 (25 °)", "4.76 (at 25 °C)",
+                      "pKa 4.78 (25 °)", NA) %in% a$Result), 1)
+  expect_equal(mean(c("DrugBank", "FooDB", NA) %in% a$SourceName), 1)
+  expect_equal(mean(c("DB04272", "FDB012586", "DB03166","FDB008299", NA) %in%
+                      a$SourceID), 1)
   b <- pc_sect(2231, "depositor-supplied synonyms", "substance")
   expect_s3_class(b, c("tbl_df", "tbl", "data.frame"))
   expect_equal(names(b), c("SID", "Name", "Result", "SourceName", "SourceID"))
@@ -158,18 +164,11 @@ test_that("pc_sect()", {
   c <- pc_sect(780286, "modify date", "assay")
   expect_s3_class(c, c("tbl_df", "tbl", "data.frame"))
   expect_equal(names(c), c("AID", "Name", "Result", "SourceName", "SourceID"))
-  expect_equal(c$Result, c("2014-05-03", "2018-09-28"))
+  expect_equal(c$Result, c("2014-05-03", "2018-09-28", "2020-06-30"))
 
   d <- pc_sect("1ZHY_A", "Sequence", "protein")
   expect_s3_class(d, c("tbl_df", "tbl", "data.frame"))
   expect_equal(names(d), c("pdbID", "Name", "Result", "SourceName", "SourceID"))
   expect_equivalent(d$Result[1],
                     ">pdb|1ZHY|A Chain A, 1 Kes1 Protein (Run BLAST)")
-
-  e <- pc_sect("US2013040379", "Patent Identifier Synonyms", "patent")
-  expect_s3_class(e, c("tbl_df", "tbl", "data.frame"))
-  expect_equal(names(e), c("PatentID", "Name", "Result", "SourceName",
-                           "SourceID"))
-  expect_equivalent(e$Result, c("US20130040379", "US20130040379A1",
-                           "US2013040379A1"))
-})
+ })

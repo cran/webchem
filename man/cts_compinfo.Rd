@@ -4,12 +4,16 @@
 \alias{cts_compinfo}
 \title{Get record details from Chemical Translation Service (CTS)}
 \usage{
-cts_compinfo(inchikey, verbose = TRUE)
+cts_compinfo(query, from = "inchikey", verbose = TRUE, inchikey)
 }
 \arguments{
-\item{inchikey}{character; InChIkey.}
+\item{query}{character; InChIkey.}
+
+\item{from}{character; currently only accepts "inchikey".}
 
 \item{verbose}{logical; should a verbose output be printed on the console?}
+
+\item{inchikey}{deprecated}
 }
 \value{
 a list of lists (for each supplied inchikey):
@@ -38,7 +42,4 @@ sapply(out2, function(y) y$molweight)
 \references{
 Wohlgemuth, G., P. K. Haldiya, E. Willighagen, T. Kind, and O. Fiehn 2010The Chemical Translation Service
 -- a Web-Based Tool to Improve Standardization of Metabolomic Reports. Bioinformatics 26(20): 2647–2648.
-}
-\author{
-Eduard Szöcs, \email{eduardszoecs@gmail.com}
 }

@@ -10,7 +10,8 @@ nist_ri(
   type = c("kovats", "linear", "alkane", "lee"),
   polarity = c("polar", "non-polar"),
   temp_prog = c("isothermal", "ramp", "custom"),
-  cas = NULL
+  cas = NULL,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -33,6 +34,8 @@ to get RIs calculated for polar or non-polar columns.}
 \code{"ramp"}, or \code{"custom"}.}
 
 \item{cas}{deprecated.  Use \code{query} instead.}
+
+\item{verbose}{logical; should a verbose output be printed on the console?}
 }
 \value{
 returns a tibble of literature RIs with the following columns:
@@ -73,6 +76,13 @@ Reference Data Act, \url{https://www.nist.gov/srd/public-law}.
 myRIs <- nist_ri(c("78-70-6", "13474-59-4"), from = "cas", "linear",
 "non-polar", "ramp")
 }
+}
+\references{
+NIST Mass Spectrometry Data Center, William E. Wallace, director,
+  "Retention Indices" in NIST Chemistry WebBook, NIST Standard Reference
+  Database Number 69, Eds. P.J. Linstrom and W.G. Mallard,
+  National Institute of Standards and Technology, Gaithersburg MD, 20899,
+  \url{https://doi.org/10.18434/T4D303}.
 }
 \seealso{
 \code{\link{is.cas}} \code{\link{as.cas}}

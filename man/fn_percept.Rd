@@ -4,21 +4,25 @@
 \alias{fn_percept}
 \title{Retrieve flavor percepts from www.flavornet.org}
 \usage{
-fn_percept(CAS, verbose = TRUE, ...)
+fn_percept(query, from = "cas", verbose = TRUE, CAS, ...)
 }
 \arguments{
-\item{CAS}{character; CAS number to search by. See \code{\link{is.cas}} for correct formatting}
+\item{query}{character; CAS number to search by. See \code{\link{is.cas}} for correct formatting}
+
+\item{from}{character; currently only CAS numbers are accepted.}
 
 \item{verbose}{logical; should a verbose output be printed on the console?}
 
-\item{...}{not currently used}
+\item{CAS}{deprecated}
+
+\item{...}{currently unused}
 }
 \value{
 A named character vector containing flavor percepts or NA's in the case of CAS numbers that are not found
 }
 \description{
 Retreive flavor percepts from \url{http://www.flavornet.org}.  Flavornet is a database of 738 compounds with odors
-perceptible to humans detected using gas chromatography ofactometry (GCO).
+perceptible to humans detected using gas chromatography olfactometry (GCO).
 }
 \examples{
 \dontrun{
@@ -28,7 +32,4 @@ fn_percept("123-32-0")
 CASs <- c("75-07-0",  "64-17-5",  "109-66-0", "78-94-4",  "78-93-3")
 fn_percept(CASs)
 }
-}
-\author{
-Eric Scott, \email{eric.scott@tufts.edu}
 }

@@ -63,7 +63,6 @@ pc_sect(2231, "depositor-supplied synonyms", "substance")
 pc_sect(780286, "modify date", "assay")
 pc_sect(9023, "Ensembl ID", "gene")
 pc_sect("1ZHY_A", "Sequence", "protein")
-pc_sect("US2013040379", "Patent Identifier Synonyms", "patent")
 }
 }
 \references{
@@ -73,7 +72,4 @@ access to chemical annotations integrated in PubChem. J Cheminform 11, 56
 }
 \seealso{
 \code{\link{get_cid}}, \code{\link{pc_prop}}
-}
-\author{
-Tamás Stirling, \email{stirling.tamas@gmail.com}
 }

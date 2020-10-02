@@ -9,24 +9,26 @@
 #' @importFrom stats setNames
 #'
 #' @param query character; search term.
-#' @param from character; type of input, can be one of 'ALL', 'CHEBI ID',
-#' 'CHEBI NAME', 'DEFINITION', 'ALL NAMES', 'IUPAC NAME', 'CITATIONS',
-#' 'REGISTRY NUMBERS', 'MANUAL XREFS', 'AUTOMATIC XREFS', 'FORMULA', 'MASS',
-#' 'MONOISOTOPIC MASS', 'CHARGE', 'INCHI/INCHI KEY', 'SMILES', 'SPECIES'.
-#' @param match character; How should multiple hits be handled?,
-#' \code{"all"} all matches are returned,
-#' \code{"best"} the best matching (by the ChEBI searchscore) is returned,
-#' \code{"ask"} enters an interactive mode and the user is asked for input,
-#' \code{"na"} returns NA if multiple hits are found.
+#' @param from character; type of input.  \code{"all"} searches all types and
+#'   \code{"name"} searches all names. Other options include \code{'chebi id'},
+#'   \code{'chebi name'}, \code{'definition'}, \code{'iupac name'},
+#'   \code{'citations'}, \code{'registry numbers'}, \code{'manual xrefs'},
+#'   \code{'automatic xrefs'}, \code{'formula'}, \code{'mass'},
+#'   \code{'monoisotopic mass'},\code{'charge'}, \code{'inchi'},
+#'   \code{'inchikey'}, \code{'smiles'}, and \code{'species'}
+#' @param match character; How should multiple hits be handled?, \code{"all"}
+#'   all matches are returned, \code{"best"} the best matching (by the ChEBI
+#'   searchscore) is returned, \code{"ask"} enters an interactive mode and the
+#'   user is asked for input, \code{"na"} returns NA if multiple hits are found.
 #' @param max_res integer; maximum number of results to be retrieved from the
-#' web service
-#' @param stars character; type of input can be one of 'ALL', 'TWO ONLY',
-#' 'THREE ONLY'.
+#'   web service
+#' @param stars character; "three only" restricts results to those manualy
+#'   annotated by the ChEBI team.
 #' @param verbose logical; should a verbose output be printed on the console?
-#' @param ... optional arguments
+#' @param ... currently unused
 #' @return returns a list of data.frames containing a chebiid, a chebiasciiname,
-#' a searchscore and stars if matches were found.
-#' If not, data.frame(NA) is returned
+#'   a searchscore and stars if matches were found. If not, data.frame(NA) is
+#'   returned
 #'
 #' @references Hastings J, Owen G, Dekker A, Ennis M, Kale N, Muthukrishnan V,
 #'   Turner S, Swainston N, Mendes P, Steinbeck C. (2016). ChEBI in 2016:
@@ -50,10 +52,9 @@
 #'   ChEBI: a database and ontology for chemical entities of biological
 #'   interest. Nucleic Acids Res. 36, D344–D350.
 #' @references Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
-#' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
-#' Information from the Web. Journal of Statistical Software, 93(13).
-#' <doi:10.18637/jss.v093.i13>.
-#' @author Andreas Scharmüller, \email{andschar@@protonmail.com}
+#'   Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
+#'   Information from the Web. Journal of Statistical Software, 93(13).
+#'   <doi:10.18637/jss.v093.i13>.
 #' @export
 #' @examples
 #' \donttest{
@@ -67,24 +68,34 @@
 #'
 #' }
 get_chebiid <- function(query,
-                        from = 'ALL',
-                        match = c("all", "best", "ask", "na"),
+                        from = c('all', 'chebi id', 'chebi name', 'definition', 'name',
+                                'iupac name', 'citations', 'registry numbers', 'manual xrefs',
+                                'automatic xrefs', 'formula', 'mass', 'monoisotopic mass',
+                                'charge', 'inchi', 'inchikey', 'smiles', 'species'),
+                        match = c("all", "best", "first", "ask", "na"),
                         max_res = 200,
-                        stars = 'ALL',
+                        stars =  c('all', 'two only', 'three only'),
                         verbose = TRUE,
                         ...) {
+
+  if (!ping_service("chebi")) stop(webchem_message("service_down"))
+
   match <- match.arg(match)
-  foo <- function(query, match, from, max_res, stars, verbose, ...) {
-    if (is.na(query)) return(data.frame(chebiid = NA_character_,
-                                        query = NA_character_,
-                                        stringsAsFactors = FALSE))
-    from_all <- c('ALL', 'CHEBI ID', 'CHEBI NAME', 'DEFINITION', 'ALL NAMES',
-                  'IUPAC NAME', 'CITATIONS', 'REGISTRY NUMBERS', 'MANUAL XREFS',
-                  'AUTOMATIC XREFS', 'FORMULA', 'MASS', 'MONOISOTOPIC MASS',
-                  'CHARGE', 'INCHI/INCHI KEY', 'SMILES', 'SPECIES')
-    from <- match.arg(from, from_all)
-    stars_all <- c('ALL', 'TWO ONLY', 'THREE ONLY')
-    stars <- match.arg(stars, stars_all)
+  from <- toupper(match.arg(from))
+  if (from == "NAME") {
+    from <- "ALL NAMES"
+  }
+  if (from == "inchi" | from == "inchikey") {
+    from <- "INCHI/INCHI KEY"
+  }
+
+  stars <- toupper(match.arg(stars))
+
+  foo <- function(query, from, match, max_res, stars, verbose, ...) {
+    if (is.na(query)) {
+      if (verbose) webchem_message("na")
+      return(tibble::tibble("query" = NA_character_, "chebiid" = NA_character_))
+    }
     # query
     url <- 'http://www.ebi.ac.uk:80/webservices/chebi/2.0/webservice'
     headers <- c(Accept = 'text/xml',
@@ -106,21 +117,26 @@ get_chebiid <- function(query,
         </soapenv:Body>
      </soapenv:Envelope>')
     Sys.sleep(rgamma(1, shape = 5, scale = 1/10))
-    if (verbose)
-      message(query, ': ', url)
-    res <- POST(url,
-                add_headers(headers),
-                body = body)
+    if (verbose) webchem_message("query", query, appendLF = FALSE)
+    res <- try(httr::RETRY("POST",
+                           url,
+                           httr::user_agent(webchem_url()),
+                           httr::add_headers(headers),
+                           body = body,
+                           terminate_on = 404,
+                           quiet = TRUE), silent = TRUE)
+    if (inherits(res, "try-error")) {
+      if (verbose) webchem_message("service_down")
+      return(tibble::tibble("query" = query, "chebiid" = NA_character_))
+    }
+    if (verbose) message(httr::message_for_status(res))
     if (res$status_code == 200) {
-      cont <- try(content(res, type = 'text/xml', encoding = 'utf-8'),
-                  silent = TRUE)
+      cont <- content(res, type = 'text/xml', encoding = 'utf-8')
       out <- l2df(as_list(xml_children(xml_find_first(cont, '//d1:return'))))
-      out <- setNames(out, tolower(names(out)))
+      out <- as_tibble(setNames(out, tolower(names(out))))
       if (nrow(out) == 0) {
-        message('No result found. \n')
-        return(data.frame(chebiid = NA_character_,
-                          query = query,
-                          stringsAsFactors = FALSE))
+        webchem_message("not_found")
+        return(tibble::tibble("query" = query, "chebiid" = NA_character_))
       }
       if (nrow(out) > 0) out$query <- query
       if (nrow(out) == 1) return(out)
@@ -134,33 +150,37 @@ get_chebiid <- function(query,
         return(out[which.max(out$searchscore), ])
       }
       if (match == "ask") {
-        matched <- chooser(out$chebiid, 'all')
+        matched <-
+          matcher(
+            out$chebiid,
+            query = query,
+            result = out$chebiasciiname,
+            match = "ask",
+            from = match.arg(from),
+            verbose = verbose
+          )
         return(out[out$chebiid == matched, ])
       }
-      if (match == 'na') {
-        return(data.frame(chebiid = NA_character_,
-                          query = query,
-                          stringsAsFactors = FALSE))
+      if (match == "na") {
+        return(tibble::tibble("query" = query, "chebiid" = NA_character_))
+        }
+      if (match == "first") {
+        return(out[1, ])
       }
     } else {
-      out <- data.frame(chebiid = NA_character_,
-                        query = query,
-                        stringsAsFactors = FALSE)
-      message('Returning NA (', http_status(res)$message, '). \n')
-
-      return(out)
-    }
+      return(tibble::tibble("query" = query, "chebiid" = NA_character_))
+      }
   }
   out <- lapply(query,
                 foo,
-                match = match,
                 from = from,
+                match = match,
                 max_res = max_res,
                 stars = stars,
                 verbose = verbose)
   out <- setNames(out, query)
-  out <- as_tibble(bind_rows(out))
-  return(out)
+  out <- bind_rows(out)
+  return(dplyr::select(out, "query", "chebiid", everything()))
 }
 
 
@@ -209,7 +229,6 @@ get_chebiid <- function(query,
 #' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
 #' Information from the Web. Journal of Statistical Software, 93(13).
 #' <doi:10.18637/jss.v093.i13>.
-#' @author Andreas Scharmüller, \email{andschar@@protonmail.com}
 #' @export
 #' @examples
 #' \donttest{
@@ -221,11 +240,18 @@ get_chebiid <- function(query,
 #' chebi_comp_entity(comp)
 #'
 #' }
-chebi_comp_entity <- function(chebiid, verbose = TRUE, ...) {
+chebi_comp_entity <- function(chebiid,
+                              verbose = TRUE,
+                              ...) {
+
+  if (!ping_service("chebi")) stop(webchem_message("service_down"))
 
   foo <- function(chebiid, verbose, ...) {
     # chebiid = c('CHEBI:27744', 'CHEBI:17790'); verbose = TRUE # debuging
-    if (is.na(chebiid)) return(NA)
+    if (is.na(chebiid)) {
+      if (verbose) webchem_message("na")
+      return(NA)
+    }
     url <- 'http://www.ebi.ac.uk:80/webservices/chebi/2.0/webservice'
     headers <- c(Accept = 'text/xml',
                  Accept = 'multipart/*',
@@ -242,14 +268,21 @@ chebi_comp_entity <- function(chebiid, verbose = TRUE, ...) {
           </chebi:getCompleteEntity>
         </soapenv:Body>
      </soapenv:Envelope>')
-    if (verbose)
-      message(chebiid, ': ', url)
+    if (verbose) webchem_message("query", chebiid, appendLF = FALSE)
     Sys.sleep(rgamma(1, shape = 5, scale = 1/10))
-    res <- POST(url,
-                add_headers(headers),
-                body = body)
+    res <- try(httr::RETRY("POST",
+                           url,
+                           httr::user_agent(webchem_url()),
+                           httr::add_headers(headers),
+                           body = body,
+                           terminate_on = 404,
+                           quiet = TRUE), silent = TRUE)
+    if (inherits(res, "try-error")) {
+      if (verbose) webchem_message("service_down")
+      return(NA)
+    }
+    if (verbose) message(httr::message_for_status(res))
     if (res$status_code != 200) {
-      warning(http_status(res)$message)
       return(NA)
     } else {
       cont <- content(res, type = 'text/xml', encoding = 'utf-8')
@@ -321,7 +354,6 @@ chebi_comp_entity <- function(chebiid, verbose = TRUE, ...) {
 #' @param x list; a list to bind into a data.frame
 #' @return a data.frame
 #' @seealso \code{\link{chebi_comp_entity}}
-#' @author Andreas Scharmüller, \email{andschar@@protonmail.com}
 #' @noRd
 #'
 l2df <- function(x) {
@@ -340,7 +372,6 @@ l2df <- function(x) {
 #' https://stackoverflow.com/questions/17308551/do-callrbind-list-for-uneven-number-of-column
 #' @param x list; a list to bind into a data.frame
 #' @seealso \code{\link{l2df}}
-#' @author Andreas Scharmüller, \email{andschar@@protonmail.com}
 #' @noRd
 #'
 rbind_named_fill <- function(x) {

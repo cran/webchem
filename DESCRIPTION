@@ -7,10 +7,10 @@ Description: Chemical information from around the web. This package interacts
     Flavornet, NIST Chemistry WebBook, OPSIN, PAN Pesticide Database, PubChem,
     SRS, Wikidata.
 Type: Package
-Version: 1.0.0
-Date: 2020-05-27
+Version: 1.1.0
+Date: 2020-10-01
 License: MIT + file LICENSE
-URL: https://docs.ropensci.org/webchem,
+URL: https://docs.ropensci.org/webchem/,
         https://github.com/ropensci/webchem
 BugReports: https://github.com/ropensci/webchem/issues
 Authors@R: c(person("Eduard", "Szöcs", role = "aut"),
@@ -20,6 +20,7 @@ Authors@R: c(person("Eduard", "Szöcs", role = "aut"),
     person("Andreas", "Scharmüller", role = "ctb"),        
     person("Eric R", "Scott", role = "ctb"),
     person("Jan", "Stanstrup", role = "ctb"),
+    person("João Vitor", "F Cavalcante", role = "ctb"),
     person("Gordon", "Getzinger", role = "ctb"),
     person("Tamás", "Stirling", email = "stirling.tamas@gmail.com", role = c("ctb", "cre")))
 Maintainer: Tamás Stirling <stirling.tamas@gmail.com>
@@ -28,12 +29,13 @@ LazyData: yes
 Encoding: UTF-8
 Depends: R (>= 3.0)
 Imports: xml2, httr, rvest, RCurl, jsonlite, stringr, methods, dplyr,
-        purrr, data.tree, tibble
-Suggests: testthat, rcdk, covr, robotstxt, knitr, rmarkdown
-RoxygenNote: 7.1.0
+        purrr, data.tree, tibble, base64enc, rlang
+Suggests: testthat, rcdk, covr, robotstxt, knitr, rmarkdown,
+        plot.matrix, usethis
+RoxygenNote: 7.1.1
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2020-05-27 21:23:21 UTC; tomi
+Packaged: 2020-10-02 19:24:54 UTC; tomi
 Author: Eduard Szöcs [aut],
   Robert Allaway [ctb],
   Daniel Muench [ctb],
@@ -41,7 +43,8 @@ Author: Eduard Szöcs [aut],
   Andreas Scharmüller [ctb],
   Eric R Scott [ctb],
   Jan Stanstrup [ctb],
+  João Vitor F Cavalcante [ctb],
   Gordon Getzinger [ctb],
   Tamás Stirling [ctb, cre]
 Repository: CRAN
-Date/Publication: 2020-05-28 05:20:03 UTC
+Date/Publication: 2020-10-02 21:00:02 UTC

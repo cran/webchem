@@ -7,7 +7,7 @@
 get_etoxid(
   query,
   from = c("name", "cas", "ec", "gsbl", "rtecs"),
-  match = c("best", "all", "first", "ask", "na"),
+  match = c("all", "best", "first", "ask", "na"),
   verbose = TRUE
 )
 }
@@ -60,11 +60,4 @@ Information from the Web. Journal of Statistical Software, 93(13).
 \code{\link{etox_basic}} for basic information,
 \code{\link{etox_targets}} for quality targets and
 \code{\link{etox_tests}} for test results.
-}
-\author{
-Eduard Szöcs, \email{eduardszoecs@gmail.com}
-
-Tamás Stirling, \email{stirling.tamas@gmail.com}
-
-Andreas Scharmüller, \email{andschar@protonmail.com}
 }

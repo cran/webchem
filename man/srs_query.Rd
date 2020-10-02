@@ -4,13 +4,22 @@
 \alias{srs_query}
 \title{Get record details from U.S. EPA Substance Registry Servives (SRS)}
 \usage{
-srs_query(query, from = c("itn", "cas", "epaid", "tsn", "name"))
+srs_query(
+  query,
+  from = c("itn", "cas", "epaid", "tsn", "name"),
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{query}{character; query ID.}
 
 \item{from}{character; type of query ID, e.g. \code{'itn'} , \code{'cas'},
 \code{'epaid'}, \code{'tsn'}, \code{'name'}.}
+
+\item{verbose}{logical; should a verbose output be printed on the console?}
+
+\item{...}{not currently used.}
 }
 \value{
 a list of lists (for each supplied query): a list of 22. subsKey,
@@ -32,7 +41,4 @@ srs_query(query = '50-00-0', from = 'cas')
 casrn <- c('50-00-0', '67-64-1')
 srs_query(query = casrn, from = 'cas')
 }
-}
-\author{
-Gordon Getzinger, \email{gjg3@duke.edu}
 }

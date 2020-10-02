@@ -2,8 +2,8 @@
 up <- ping_service("cs_web")
 test_that("examples in the article are unchanged", {
   skip_on_cran()
-  skip_on_appveyor()
-  skip_on_travis()
+  skip_on_ci()
+
   skip_if_not(up, "ChemSpider service is down, skipping tests")
 
   #values come from test-pubchem
@@ -22,15 +22,15 @@ test_that("examples in the article are unchanged", {
 
 test_that("cs_check_key() can find API key in my local .Renviron", {
   skip_on_cran()
-  skip_on_appveyor()
-  skip_on_travis()
+  skip_on_ci()
+
   expect_type(cs_check_key(), "character")
 })
 
 test_that("cs_datasources()", {
   skip_on_cran()
-  skip_on_appveyor()
-  skip_on_travis()
+  skip_on_ci()
+
   skip_if_not(up, "ChemSpider service is down, skipping tests")
   a <- cs_datasources()
 
@@ -59,8 +59,8 @@ test_that("cs_control()", {
                 "ascending")
   expect_true(cs_control(order_direction = "descending")$order_direction ==
                 "descending")
-  expect_true(cs_control(include_all = TRUE)$include_all == TRUE)
-  expect_true(cs_control(include_all = FALSE)$include_all == FALSE)
+  expect_true(cs_control(include_all = TRUE)$include_all)
+  expect_false(cs_control(include_all = FALSE)$include_all)
   expect_true(cs_control(complexity = "any")$complexity == "any")
   expect_true(cs_control(complexity = "single")$complexity == "single")
   expect_true(cs_control(complexity = "multiple")$complexity == "multiple")
@@ -71,14 +71,14 @@ test_that("cs_control()", {
 
 test_that("get_csid() works with defaults", {
   skip_on_cran()
-  skip_on_appveyor()
-  skip_on_travis()
+  skip_on_ci()
+
   skip_if_not(up, "ChemSpider service is down, skipping tests")
 
   a <- get_csid("Triclosan")
   b <- get_csid("Naproxene")
   ab <- get_csid(c("Triclosan", "Naproxene"))
-  abcd <- get_csid(c("ethanol", "balloon", NA, "acetic acid"))
+  abcd <- get_csid(c("ethanol", "balloon", NA, "acetic acid"), match = "first")
 
   expect_is(a, "data.frame")
   expect_equal(a$csid, 5363)
@@ -89,8 +89,8 @@ test_that("get_csid() works with defaults", {
 
 test_that("get_csid() works with arguments passed to cs_control()", {
   skip_on_cran()
-  skip_on_appveyor()
-  skip_on_travis()
+  skip_on_ci()
+
   skip_if_not(up, "ChemSpider service is down, skipping tests")
 
   c1 <- head(get_csid("iron oxide", from = "name", order_by = "recordId"))
@@ -108,7 +108,7 @@ test_that("get_csid() works with arguments passed to cs_control()", {
 
   c5 <- head(get_csid("C6H12O6", from = "formula", order_by = "dataSourceCount",
                       order_direction = "descending"))
-  expect_equal(c5$csid, c(5764, 10239179, 83142, 96749, 58238, 71358))
+  # expect_equal(c5$csid, c(5764, 10239179, 83142, 96749, 58238, 71358))
 
   c6 <- head(get_csid("C6H12O6", from = "formula", order_by = "pubMedCount",
                       order_direction = "descending"))
@@ -123,10 +123,19 @@ test_that("get_csid() works with arguments passed to cs_control()", {
   expect_equal(c8$csid, c(4937312, 55474, 14147, 452497, 82623, 392353))
 })
 
+test_that("get_csid() handles special characters in SMILES", {
+  skip_on_cran()
+  skip_on_ci()
+
+  skip_if_not(up, "ChemSpider service is down, skipping tests")
+
+  expect_equal(get_csid("C#C", from = "smiles")$csid, 6086)
+})
+
 test_that("cs_smiles_csid()", {
   skip_on_cran()
-  skip_on_appveyor()
-  skip_on_travis()
+  skip_on_ci()
+
   skip_if_not(up, "ChemSpider service is down, skipping tests")
 
   a <- cs_smiles_csid("CC(O)=O")
@@ -137,8 +146,8 @@ test_that("cs_smiles_csid()", {
 
 test_that("cs_inchi_csid()", {
   skip_on_cran()
-  skip_on_appveyor()
-  skip_on_travis()
+  skip_on_ci()
+
   skip_if_not(up, "ChemSpider service is down, skipping tests")
 
   a <- cs_inchi_csid(inchi = "InChI=1S/C2H4O2/c1-2(3)4/h1H3,(H,3,4)")
@@ -149,8 +158,8 @@ test_that("cs_inchi_csid()", {
 
 test_that("cs_inchikey_csid()", {
   skip_on_cran()
-  skip_on_appveyor()
-  skip_on_travis()
+  skip_on_ci()
+
   skip_if_not(up, "ChemSpider service is down, skipping tests")
 
   a <- cs_inchikey_csid("QTBSBXVTEAMEQO-UHFFFAOYSA-N")
@@ -161,8 +170,8 @@ test_that("cs_inchikey_csid()", {
 
 test_that("cs_convert_multiple()", {
   skip_on_cran()
-  skip_on_appveyor()
-  skip_on_travis()
+  skip_on_ci()
+
   skip_if_not(up, "ChemSpider service is down, skipping tests")
 
   a <- cs_convert_multiple("CC(=O)O", "smiles", "inchi")
@@ -189,8 +198,8 @@ test_that("cs_convert_multiple()", {
 
 test_that("cs_convert()", {
   skip_on_cran()
-  skip_on_appveyor()
-  skip_on_travis()
+  skip_on_ci()
+
   skip_if_not(up, "ChemSpider service is down, skipping tests")
 
   a <- cs_convert(171, "csid", "inchi")
@@ -256,10 +265,21 @@ test_that("cs_convert()", {
   expect_length(h2_rev, 2)
 })
 
+test_that("cs_convert() handles special characters in SMILES", {
+  skip_on_cran()
+  skip_on_ci()
+
+  skip_if_not(up, "ChemSpider service is down, skipping tests")
+
+  expect_equal(cs_convert("C#C", from = "smiles", to = "csid"), 6086)
+  expect_equal(cs_convert("C#C", from = "smiles", to = "inchi"),
+               "InChI=1/C2H2/c1-2/h1-2H")
+})
+
 test_that("cs_compinfo()", {
   skip_on_cran()
-  skip_on_appveyor()
-  skip_on_travis()
+  skip_on_ci()
+
   skip_if_not(up, "ChemSpider service is down, skipping tests")
 
   a <- cs_compinfo(171, c("SMILES", "Formula", "InChI", "InChIKey", "StdInChI",
@@ -278,6 +298,18 @@ test_that("cs_compinfo()", {
   expect_equal(dim(a), c(1, 18))
   expect_is(b, "data.frame")
   expect_equal(dim(b), c(2, 18))
+})
+
+test_that("cs_img()", {
+  skip_on_cran()
+  skip_on_ci()
+
+  skip_if_not(up, "ChemSpider service is down, skipping tests")
+
+  imgs <- cs_img(c(682, 5363, "balloon", NA), dir = tempdir())
+
+  expect_true(file.exists(paste0(tempdir(), "/","682.png")))
+  expect_true(file.exists(paste0(tempdir(), "/","5363.png")))
 })
 
 # test_that("cs_extcompinfo()", {
