@@ -18,7 +18,6 @@
 #' @note Only matches in labels are returned.
 #'
 #' @import jsonlite httr
-#' @importFrom stats rgamma
 #' @importFrom utils URLencode URLdecode
 #' @importFrom purrr map_df
 #' @export
@@ -56,7 +55,7 @@ get_wdid <-
         paste0("wikidata.org/w/api.php?action=wbsearchentities&format=json&type=item")
       qurl <- paste0(qurl, "&language=", language, "&limit=", limit, "&search=", query1)
       if (verbose) webchem_message("query", query, appendLF = FALSE)
-      Sys.sleep(0.3)
+      webchem_sleep(type = 'API')
       res <- try(httr::RETRY("GET",
                              qurl,
                              httr::user_agent(webchem_url()),
@@ -119,17 +118,16 @@ get_wdid <-
 
 
 
-#' Retrieve Indentifiers from Wikidata
+#' Retrieve identifiers from Wikidata
 #'
 #' @import jsonlite
 #' @import httr
-#' @importFrom stats rgamma
 #'
 #' @param id character; identifier, as returned by \code{\link{get_wdid}}
 #' @param verbose logical; print message during processing to console?
 #'
 #' @return A data.frame of identifiers. Currently these are 'smiles', 'cas', 'cid', 'einecs', 'csid', 'inchi', 'inchikey',
-#' 'drugbank', 'zvg', 'chebi', 'chembl', 'unii' and source_url.
+#' 'drugbank', 'zvg', 'chebi', 'chembl', 'unii', 'lipidmaps', 'swisslipids' and source_url.
 #'
 #' @note Only matches in labels are returned. If more than one unique hit is found,
 #' only the first is returned.
@@ -137,7 +135,7 @@ get_wdid <-
 #' @seealso \code{\link{get_wdid}}
 #'
 #' @references Willighagen, E., 2015. Getting CAS registry numbers out of WikiData. The Winnower.
-#' \url{http://dx.doi.org/10.15200/winn.142867.72538}
+#' \doi{10.15200/winn.142867.72538}
 #'
 #' Mitraka, Elvira, Andra Waagmeester, Sebastian Burgstaller-Muehlbacher, et al. 2015
 #' Wikidata: A Platform for Data Integration and Dissemination for the Life Sciences and beyond. bioRxiv: 031971.
@@ -155,19 +153,19 @@ wd_ident <- function(id, verbose = TRUE){
   # id <- c( "Q163648", "Q18216")
   # id <- 'Q408646'
   foo <- function(id, verbose){
-    empty <- as.list(rep(NA, 13))
+    empty <- as.list(rep(NA, 15))
     names(empty) <- c("smiles", "cas", "cid", "einecs", "csid", "inchi",
                       "inchikey", "drugbank", "zvg", "chebi", "chembl", "unii",
-                      "source_url")
+                      'lipidmaps', 'swisslipids', "source_url")
     if (is.na(id)) {
       if (verbose) webchem_message("na")
       return(empty)
     }
     baseurl <- 'https://query.wikidata.org/sparql?format=json&query='
     props <- c('P233', 'P231', 'P662', 'P232', 'P661', 'P234', 'P235', 'P715', 'P679',
-               'P683', 'P592', 'P652')
+               'P683', 'P592', 'P652', 'P2063', 'P8691')
     names <- c('smiles', 'cas', 'cid', 'einecs', 'csid', 'inchi', 'inchikey',
-               'drugbank', 'zvg', 'chebi', 'chembl', 'unii')
+               'drugbank', 'zvg', 'chebi', 'chembl', 'unii', 'lipidmaps', 'swisslipids')
 
     sparql_head <- paste('PREFIX wd: <http://www.wikidata.org/entity/>',
       'PREFIX wdt: <http://www.wikidata.org/prop/direct/>',
@@ -177,7 +175,7 @@ wd_ident <- function(id, verbose = TRUE){
     sparql <- paste(sparql_head, sparql_body, '}')
     qurl <- paste0(baseurl, sparql)
     qurl <- URLencode(qurl)
-    Sys.sleep( rgamma(1, shape = 15, scale = 1/10))
+    webchem_sleep(type = 'API')
     if (verbose) webchem_message("query", id, appendLF = FALSE)
     res <- try(httr::RETRY("GET",
                            qurl,
@@ -197,7 +195,7 @@ wd_ident <- function(id, verbose = TRUE){
 
       if (length(out) == 0) {
         if (verbose) webchem_message("not_found")
-        out <- as.list(rep(NA, 13))
+        out <- as.list(rep(NA, 15))
         names(out) <- c(vars_out, 'source_url')
         return(out)
       }

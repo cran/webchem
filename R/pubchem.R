@@ -6,7 +6,7 @@
 #' @param domain character; query domain, can be one of \code{"compound"},
 #' \code{"substance"}, \code{"assay"}.
 #' @param match character; How should multiple hits be handled?, \code{"all"}
-#' all matches are returned, \code{"best"} the best matching is returned,
+#' all matches are returned, \code{"first"} the first matching is returned,
 #' \code{"ask"} enters an interactive mode and the user is asked for input,
 #' \code{"na"} returns NA if multiple hits are found.
 #' @param verbose logical; should a verbose output be printed on the console?
@@ -64,7 +64,7 @@
 #' @references Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
 #' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
 #' Information from the Web. Journal of Statistical Software, 93(13).
-#' <doi:10.18637/jss.v093.i13>.
+#' \doi{10.18637/jss.v093.i13}.
 #' @note Please respect the Terms and Conditions of the National Library of
 #' Medicine, \url{https://www.nlm.nih.gov/databases/download.html} the data
 #' usage policies of National Center for Biotechnology Information,
@@ -75,7 +75,6 @@
 #' @import httr
 #' @importFrom purrr map map2
 #' @importFrom jsonlite fromJSON
-#' @importFrom stats rgamma
 #' @importFrom tibble enframe
 #' @importFrom utils URLencode
 #' @export
@@ -193,7 +192,7 @@ get_cid <-
                       sep = "/")
       }
       if (!is.null(arg)) qurl <- paste0(qurl, "?", arg)
-      Sys.sleep(rgamma(1, shape = 15, scale = 1 / 10))
+      webchem_sleep(type = 'API')
       if (from == "inchi") {
         qurl <- paste("https://pubchem.ncbi.nlm.nih.gov/rest/pug",
                       domain, from, "cids", "json", sep = "/")
@@ -221,7 +220,7 @@ get_cid <-
           qurl <- paste("https://pubchem.ncbi.nlm.nih.gov/rest/pug/", domain,
                         "listkey", listkey, "cids", "json", sep = "/")
           while (res$status_code == 202) {
-            Sys.sleep(5 + rgamma(1, shape = 15, scale = 1 / 10))
+            webchem_sleep(time = 5)
             res <- try(httr::RETRY("POST",
                                    qurl,
                                    user_agent(webchem_url()),
@@ -297,7 +296,7 @@ get_cid <-
 #' @references Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
 #' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
 #' Information from the Web. Journal of Statistical Software, 93(13).
-#' <doi:10.18637/jss.v093.i13>.
+#' \doi{10.18637/jss.v093.i13}.
 #' @note Please respect the Terms and Conditions of the National Library of
 #' Medicine, \url{https://www.nlm.nih.gov/databases/download.html} the data
 #' usage policies of National Center for Biotechnology Information,
@@ -353,7 +352,7 @@ pc_prop <- function(cid, properties = NULL, verbose = TRUE, ...) {
 
   qurl <- paste0(prolog, input, output)
   if (verbose) webchem_message("query_all", appendLF = FALSE)
-  Sys.sleep(0.2)
+  webchem_sleep(type = 'API')
   res <- try(httr::RETRY("POST",
                          qurl,
                          httr::user_agent(webchem_url()),
@@ -474,7 +473,7 @@ pc_synonyms <- function(query,
       arg <- paste0("?", arg)
     qurl <- paste0(prolog, input, output, arg)
     if (verbose) webchem_message("query", query, appendLF = FALSE)
-    Sys.sleep(0.2)
+    webchem_sleep(type = 'API')
     res <- try(httr::RETRY("POST",
                            qurl,
                            httr::user_agent(webchem_url()),
@@ -502,7 +501,7 @@ pc_synonyms <- function(query,
     }
   }
   out <- lapply(query, foo, from = from, verbose = verbose)
-  out <- setNames(out, query)
+  names(out) <- query
   if (!is.null(choices)) #if only one choice is returned, convert list to vector
     out <- unlist(out)
   return(out)
@@ -542,7 +541,7 @@ pc_synonyms <- function(query,
 #' \url{https://pubchem.ncbi.nlm.nih.gov/sources/}.
 #' @references Kim, S., Thiessen, P.A., Cheng, T. et al. PUG-View: programmatic
 #' access to chemical annotations integrated in PubChem. J Cheminform 11, 56
-#' (2019). https://doi.org/10.1186/s13321-019-0375-2.
+#' (2019). \doi{10.1186/s13321-019-0375-2}.
 #' @seealso \code{\link{get_cid}}, \code{\link{pc_prop}}
 #' @examples
 #' # might fail if API is not available
@@ -576,7 +575,6 @@ pc_sect <- function(id,
 #'
 #' @importFrom jsonlite fromJSON
 #' @importFrom data.tree as.Node Do
-#' @importFrom stats rexp
 #' @param id numeric or character; a vector of identifiers to search for.
 #' @param section character; the section of the content page to be imported.
 #' @param domain character; the query domain. Can be one of \code{"compound"},
@@ -594,7 +592,7 @@ pc_sect <- function(id,
 #' \url{https://pubchem.ncbi.nlm.nih.gov/classification/#hid=72}.
 #' @references Kim, S., Thiessen, P.A., Cheng, T. et al. PUG-View: programmatic
 #' access to chemical annotations integrated in PubChem. J Cheminform 11, 56
-#' (2019). https://doi.org/10.1186/s13321-019-0375-2.
+#' (2019). \doi{10.1186/s13321-019-0375-2}.
 #' @examples
 #' # might fail if API is not available
 #' \donttest{
@@ -620,7 +618,7 @@ pc_page <- function(id,
     qurl <- paste0("https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/",
                    domain, "/", id, "/JSON?heading=", section)
     if (verbose) webchem_message("query", id, appendLF = FALSE)
-    Sys.sleep(0.3 + stats::rexp(1, rate = 10 / 0.3))
+    webchem_sleep(type = 'API')
     res <- try(httr::RETRY("POST",
                            qurl,
                            user_agent(webchem_url()),
@@ -673,7 +671,7 @@ pc_page <- function(id,
 #' be found at \url{https://pubchem.ncbi.nlm.nih.gov/classification/#hid=72}.
 #' @references Kim, S., Thiessen, P.A., Cheng, T. et al. PUG-View: programmatic
 #' access to chemical annotations integrated in PubChem. J Cheminform 11, 56
-#' (2019). https://doi.org/10.1186/s13321-019-0375-2.
+#' (2019). \doi{10.1186/s13321-019-0375-2}.
 #' @examples
 #' # might fail if API is not available
 #' \donttest{

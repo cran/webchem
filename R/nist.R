@@ -40,7 +40,7 @@ get_ri_xml <-
         ID <- paste0("C", gsub("-", "", query))
       } else {
         qurl <- paste0(baseurl, "?", from_str, "=", query, "&Units=SI")
-        Sys.sleep(rgamma(1, shape = 15, scale = 1/10))
+        webchem_sleep(type = 'scrape')
         if (verbose) webchem_message("query", query, appendLF = FALSE)
         res <- try(httr::RETRY("GET",
                                qurl,
@@ -93,7 +93,7 @@ get_ri_xml <-
       type_str <- toupper(paste(type, "RI", polarity, temp_prog, sep = "-"))
 
       qurl <- paste0(baseurl, "?ID=", ID, "&Units-SI&Mask=2000&Type=", type_str)
-      Sys.sleep(rgamma(1, shape = 15, scale = 1/10))
+      webchem_sleep(type = 'scrape')
       if (verbose) {
         if (from == "cas") {
           webchem_message("query", query, appendLF = FALSE)
@@ -309,7 +309,7 @@ tidy_ritable <- function(ri_xml) {
 #'   "Retention Indices" in NIST Chemistry WebBook, NIST Standard Reference
 #'   Database Number 69, Eds. P.J. Linstrom and W.G. Mallard,
 #'   National Institute of Standards and Technology, Gaithersburg MD, 20899,
-#'   \url{https://doi.org/10.18434/T4D303}.
+#'   \doi{10.18434/T4D303}.
 #'
 #' @export
 #' @note Copyright for NIST Standard Reference Data is governed by the Standard
@@ -355,7 +355,7 @@ nist_ri <- function(query,
 
   querynames <- query
   querynames [is.na(querynames)] <- ".NA"
-  ri_xmls <- setNames(ri_xmls, querynames)
+  names(ri_xmls) <- querynames
 
   ri_tables <- purrr::map_dfr(ri_xmls, tidy_ritable, .id = "query") %>%
     dplyr::mutate(query = na_if(query, ".NA"))

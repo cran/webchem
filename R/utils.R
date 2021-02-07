@@ -21,7 +21,7 @@
 #' @references Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
 #' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
 #' Information from the Web. Journal of Statistical Software, 93(13).
-#' <doi:10.18637/jss.v093.i13>.
+#' \doi{10.18637/jss.v093.i13}.
 #' @export
 #' @examples
 #' is.inchikey('BQJCRHHNABKAKU-KBQPJGBKSA-N')
@@ -77,7 +77,7 @@ is.inchikey_cs <- function(x, verbose = TRUE){
   }
   baseurl <- 'http://www.chemspider.com/InChI.asmx/IsValidInChIKey?'
   qurl <- paste0(baseurl, 'inchi_key=', x)
-  Sys.sleep(0.1)
+  webchem_sleep(type = 'scrape')
   if (verbose) webchem_message("query", x, appendLF = FALSE)
   res <- try(httr::RETRY("GET",
                          qurl,
@@ -190,7 +190,7 @@ is.inchikey_format = function(x, verbose = TRUE) {
 #' @references Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
 #' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
 #' Information from the Web. Journal of Statistical Software, 93(13).
-#' <doi:10.18637/jss.v093.i13>.
+#' \doi{10.18637/jss.v093.i13}.
 #'
 #' @export
 #' @examples
@@ -336,7 +336,7 @@ extr_num <- function(x) {
 #' @references Grabner, M., Varmuza, K., & Dehmer, M. (2012). RMol:
 #' a toolset for transforming SD/Molfile structure information into R objects.
 #' Source Code for Biology and Medicine, 7, 12.
-#' \url{https://doi.org/10.1186/1751-0473-7-12}
+#' \doi{10.1186/1751-0473-7-12}
 #' @export
 
 parse_mol <- function(string) {
@@ -509,3 +509,33 @@ webchem_url <- function() {
   url <- "https://cran.r-project.org/web/packages/webchem/index.html"
   return(url)
 }
+
+#' Function to wait between every web-service query
+#'
+#' @param time numeric; Wait time in seconds.
+#' @param type character; Will be an API queried or a website scraped?
+#' @noRd
+#'
+webchem_sleep <- function(time = NULL,
+                          type = c('API', 'scrape')) {
+  type <- match.arg(type)
+  if (is.null(time)) {
+    if (type == 'API') {
+      time <- 0.2
+    }
+    if (type == 'scrape') {
+      time <- 0.3
+    }
+  } else {
+    if (!is.numeric(time)) {
+      stop('Set time is not numeric.')
+    }
+  }
+
+  Sys.sleep(time)
+}
+
+
+
+
+

@@ -15,7 +15,7 @@
 #'
 #' @references Lowe, D. M., Corbett, P. T., Murray-Rust, P., & Glen, R. C. (2011).
 #' Chemical Name to Structure: OPSIN, an Open Source Solution. Journal of Chemical Information and Modeling,
-#' 51(3), 739–753. \url{https://doi.org/10.1021/ci100384d}
+#' 51(3), 739–753. \doi{10.1021/ci100384d}
 #' @examples
 #' \donttest{
 #' opsin_query('Cyclopropane')
@@ -41,7 +41,7 @@ opsin_query <- function(query, verbose = TRUE, ...){
     out <- 'json'
     qurl <- paste0(baseurl, query_u, '.', out)
     if (verbose) webchem_message("query", query, appendLF = FALSE)
-    Sys.sleep( rgamma(1, shape = 5, scale = 1/10))
+    webchem_sleep(type = 'API')
     res <- try(httr::RETRY("GET",
                            qurl,
                            user_agent(webchem_url()),

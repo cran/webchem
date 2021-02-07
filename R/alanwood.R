@@ -3,7 +3,6 @@
 #' Query Alan Woods Compendium of Pesticide Common Names
 #' \url{http://www.alanwood.net/pesticides/}
 #' @import xml2
-#' @importFrom stats rgamma
 #'
 #' @param  query character; search string
 #' @param from character; type of input ('cas' or 'name')
@@ -19,7 +18,7 @@
 #' @references Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
 #' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
 #' Information from the Web. Journal of Statistical Software, 93(13).
-#' <doi:10.18637/jss.v093.i13>.
+#' \doi{10.18637/jss.v093.i13}.
 #' @export
 #' @examples
 #' \dontrun{
@@ -84,7 +83,7 @@ aw_query <- function(query, from = c("name", "cas"), verbose = TRUE,
     }
 
     qurl <- paste0("http://www.alanwood.net/pesticides/", takelink)
-    Sys.sleep(rgamma(1, shape = 15, scale = 1 / 10))
+    webchem_sleep(type = 'scrape')
     res <- try(httr::RETRY("GET",
                            qurl,
                            httr::user_agent(webchem_url()),
@@ -159,7 +158,7 @@ aw_query <- function(query, from = c("name", "cas"), verbose = TRUE,
     }
   }
   out <- lapply(query, function(x) foo(x, from = from, verbose = verbose))
-  out <- setNames(out, query)
+  names(out) <- query
   class(out) <- c("aw_query", "list")
   return(out)
 }

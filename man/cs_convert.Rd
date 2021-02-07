@@ -4,7 +4,7 @@
 \alias{cs_convert}
 \title{Convert identifiers using ChemSpider}
 \usage{
-cs_convert(query, from, to, apikey = NULL)
+cs_convert(query, from, to, verbose = TRUE, apikey = NULL)
 }
 \arguments{
 \item{query}{character; query ID.}
@@ -12,6 +12,8 @@ cs_convert(query, from, to, apikey = NULL)
 \item{from}{character; type of query ID.}
 
 \item{to}{character; type to convert to.}
+
+\item{verbose}{logical; should a verbose output be printed on the console?}
 
 \item{apikey}{character; your API key. If NULL (default),
 \code{cs_check_key()} will look for it in .Renviron or .Rprofile.}
@@ -62,5 +64,5 @@ cs_convert(160, from = "csid", to = "smiles")
 Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
 Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
 Information from the Web. Journal of Statistical Software, 93(13).
-<doi:10.18637/jss.v093.i13>.
+\doi{10.18637/jss.v093.i13}.
 }

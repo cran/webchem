@@ -1,10 +1,10 @@
 #' Query the PAN Pesticide database
 #'
-#' Retrieve information from the PAN database (\url{http://www.pesticideinfo.org/})
+#' Retrieve information from the PAN database (\url{https://www.pesticideinfo.org/}).
+#' This function is currently broken.
 #' @import xml2
 #' @importFrom utils adist
 #' @importFrom rvest html_table
-#' @importFrom stats rgamma
 #' @param query character; searchterm, e.g. chemical name or CAS.
 #' @param from character; one of "name" or "cas".
 #' @param match character; \code{match="all"} returns all matches,
@@ -13,7 +13,7 @@
 #' @param verbose logical; should a verbose output be printed on the console?
 #' @param ... currently not used.
 #' @return a named list of 73 entries,
-#'   see \url{http://www.pesticideinfo.org/Docs/ref_overview.html} for more information.
+#'   see \url{https://www.pesticideinfo.org/about/overview.html} for more information.
 #'   If \code{match="best"} an additional entry \code{match_score} with the normalized
 #'   Levenshtein distance (0 = perfect match, 1 = worst match).
 #'
@@ -65,10 +65,14 @@
 #'  out
 #'
 #'  # extract Acute Toxicity Summary
-#'  sapply(out, function(y) y$`Acute Toxicity Summary`)
+#'  # sapply(out, function(y) y$`Acute Toxicity Summary`)
 #' }
 pan_query <- function(query, from = c("name", "cas"),
-                      match = c('best', 'all', 'first', "na"), verbose = TRUE, ...){
+                      match = c('best', 'all', 'first', "na"),
+                      verbose = TRUE,
+                      ...){
+
+  warning("This function is currently broken.")
 
   if (!ping_service("pan")) stop(webchem_message("service_down"))
 
@@ -80,7 +84,7 @@ pan_query <- function(query, from = c("name", "cas"),
       if (verbose) webchem_message("na")
       return(NA)
     }
-    baseurl <- 'http://www.pesticideinfo.org/List_Chemicals.jsp?'
+    baseurl <- 'https://www.pesticideinfo.org/List_Chemicals.jsp?'
     baseq <- paste0('ChooseSearchType=Begin&ResultCnt=50&dCAS_No=y&dEPA_PCCode=y&',
                     'dDPR_Chem_Code=y&dUseList=y&dClassList=y&dMol_weight=y&',
                     'dEPA_Reg=y&dCA_Reg=y&dPIC=y&dPOP=y&dWHOObsolete=y&dEPA_HAP=y&',
@@ -101,7 +105,7 @@ pan_query <- function(query, from = c("name", "cas"),
                     'dIrrigConc=y&dLivestockConc=y&')
     qurl <- paste0(baseurl, baseq, 'ChemName=', query)
     if (verbose) webchem_message("query", query, appendLF = FALSE)
-    Sys.sleep(rgamma(1, shape = 15, scale = 1/10))
+    webchem_sleep(type = 'scrape')
     res <- try(httr::RETRY("GET",
                            qurl,
                            user_agent(webchem_url()),
@@ -137,7 +141,7 @@ pan_query <- function(query, from = c("name", "cas"),
       # return also source url
       # xmlview::xml_view(nd, add_filter = TRUE)
       source_url <- xml_attr(xml_find_all(nd, ".//a[contains(., 'Details')]"), 'href')
-      out[['source_url']] <- paste0('http://www.pesticideinfo.org/', source_url)
+      out[['source_url']] <- paste0('https://www.pesticideinfo.org/', source_url)
 
       ind <-
         matcher(
@@ -158,7 +162,7 @@ pan_query <- function(query, from = c("name", "cas"),
     }
   }
   out <- lapply(query, foo, match = match, from = from, verbose = verbose)
-  out <- setNames(out, query)
+  names(out) <- query
   class(out) <- c('pan_query', 'list')
   return(out)
 }

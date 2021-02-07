@@ -24,7 +24,7 @@ get_cid(
 \code{"substance"}, \code{"assay"}.}
 
 \item{match}{character; How should multiple hits be handled?, \code{"all"}
-all matches are returned, \code{"best"} the best matching is returned,
+all matches are returned, \code{"first"} the first matching is returned,
 \code{"ask"} enters an interactive mode and the user is asked for input,
 \code{"na"} returns NA if multiple hits are found.}
 
@@ -146,5 +146,5 @@ information in PubChem. Nucleic acids research, gkv396.
 Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
 Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
 Information from the Web. Journal of Statistical Software, 93(13).
-<doi:10.18637/jss.v093.i13>.
+\doi{10.18637/jss.v093.i13}.
 }
