@@ -3,7 +3,7 @@ test_that("examples in the article are unchanged", {
   skip_on_cran()
   skip_if_not(up, "CHEBI service is down")
 
-  data("lc50", package = "webchem")
+  utils::data("lc50", package = "webchem")
   cas_rns <- lc50[order(lc50$value)[1:3], "cas"]
   chebiids <- get_chebiid(cas_rns)
   comp <- chebi_comp_entity(chebiids$chebiid)
@@ -33,10 +33,10 @@ test_that("chebi returns correct results", {
   A <- chebi_comp_entity("CHEBI:27744")
   B <- chebi_comp_entity("27732")
 
-  expect_is(a, "data.frame")
-  expect_is(b, "data.frame")
-  expect_is(A, "list")
-  expect_is(B, "list")
+  expect_s3_class(a, "data.frame")
+  expect_s3_class(b, "data.frame")
+  expect_type(A, "list")
+  expect_type(B, "list")
 
   expect_equal(names(a)[2], "chebiid")
   expect_length(names(a), 5)

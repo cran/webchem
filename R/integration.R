@@ -22,7 +22,7 @@
 #' \dontrun{
 #' with_cts("XDDAORKBJWWYJS-UHFFFAOYSA-N", from = "inchikey", .f = "get_etoxid")
 #' }
-with_cts <- function(query, from, .f, .verbose = TRUE, ...) {
+with_cts <- function(query, from, .f, .verbose = getOption("verbose"), ...) {
   f <- rlang::as_function(.f)
   pos_froms <- eval(rlang::fn_fmls(f)$from)
 
@@ -73,7 +73,7 @@ with_cts <- function(query, from, .f, .verbose = TRUE, ...) {
 #' }
 find_db <- function(query, from,
                            sources = c("etox", "pc", "chebi", "cs",
-                                       "aw", "fn", "pan", "srs"),
+                                       "bcpc", "fn", "pan", "srs"),
                            plot = FALSE) {
   sources <- match.arg(sources, several.ok = TRUE)
   sources <- sapply(sources, switch,
@@ -81,7 +81,7 @@ find_db <- function(query, from,
                     "pc" = "get_cid",
                     "chebi" = "get_chebiid",
                     "cs" = "get_csid",
-                    "aw" = "aw_query",
+                    "bcpc" = "bcpc_query",
                     "fn" = "fn_percept",
                     "pan" = "pan_query",
                     "srs" = "srs_query")

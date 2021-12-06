@@ -4,7 +4,7 @@
 \alias{cs_datasources}
 \title{Retrieve ChemSpider data sources}
 \usage{
-cs_datasources(apikey = NULL, verbose = TRUE)
+cs_datasources(apikey = NULL, verbose = getOption("verbose"))
 }
 \arguments{
 \item{apikey}{character; your API key. If NULL (default),
@@ -32,5 +32,5 @@ cs_datasources()
 }
 }
 \references{
-\url{https://developer.rsc.org/compounds-v1/apis}
+\url{https://developer.rsc.org/docs/compounds-v1-trial/1/overview}
 }

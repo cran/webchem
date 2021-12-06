@@ -9,7 +9,7 @@ cts_convert(
   from,
   to,
   match = c("all", "first", "ask", "na"),
-  verbose = TRUE,
+  verbose = getOption("verbose"),
   choices = NULL,
   ...
 )
@@ -17,8 +17,8 @@ cts_convert(
 \arguments{
 \item{query}{character; query ID.}
 
-\item{from}{character; type of query ID, e.g. \code{'Chemical Name'} , \code{'InChIKey'},
-\code{'PubChem CID'}, \code{'ChemSpider'}, \code{'CAS'}.}
+\item{from}{character; type of query ID, e.g. \code{'Chemical Name'} ,
+\code{'InChIKey'}, \code{'PubChem CID'}, \code{'ChemSpider'}, \code{'CAS'}.}
 
 \item{to}{character; type to convert to.}
 
@@ -34,30 +34,37 @@ returns all matches, \code{"first"} returns only the first result,
 \item{...}{currently not used.}
 }
 \value{
-a list of character vectors or if \code{choices} is used, then a single named vector.
+a list of character vectors or if \code{choices} is used, then a
+single named vector.
 }
 \description{
-Convert Ids using Chemical Translation Service (CTS), see \url{http://cts.fiehnlab.ucdavis.edu/}
+Convert Ids using Chemical Translation Service (CTS), see
+\url{http://cts.fiehnlab.ucdavis.edu/}
 }
 \details{
 See also \url{http://cts.fiehnlab.ucdavis.edu/}
 for possible values of from and to.
 }
+\note{
+When this version of webchem was released, CTS was temporarily unable
+to convert chemical names to IDs.
+}
 \examples{
 \donttest{
 # might fail if API is not available
-cts_convert("triclosan", "Chemical Name", "inchikey")
+cts_convert("XEFQLINVKFYRCS-UHFFFAOYSA-N", "inchikey", "Chemical Name")
 
 ### multiple inputs
-comp <- c("triclosan", "hexane")
-cts_convert(comp, "Chemical Name", "cas")
+keys <- c("XEFQLINVKFYRCS-UHFFFAOYSA-N", "VLKZOEOYAKHREP-UHFFFAOYSA-N")
+cts_convert(keys, "inchikey", "cas")
 }
 }
 \references{
-Wohlgemuth, G., P. K. Haldiya, E. Willighagen, T. Kind, and O. Fiehn 2010The Chemical Translation Service
--- a Web-Based Tool to Improve Standardization of Metabolomic Reports. Bioinformatics 26(20): 2647–2648.
+Wohlgemuth, G., P. K. Haldiya, E. Willighagen, T. Kind, and O.
+Fiehn 2010The Chemical Translation Service -- a Web-Based Tool to Improve
+Standardization of Metabolomic Reports. Bioinformatics 26(20): 2647–2648.
 }
 \seealso{
-\code{\link{cts_from}} for possible values in the 'from' argument and
-\code{\link{cts_to}} for possible values in the 'to' argument.
+\code{\link{cts_from}} for possible values in the 'from' argument
+and \code{\link{cts_to}} for possible values in the 'to' argument.
 }

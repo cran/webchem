@@ -7,8 +7,8 @@ Description: Chemical information from around the web. This package interacts
     Flavornet, NIST Chemistry WebBook, OPSIN, PAN Pesticide Database, PubChem,
     SRS, Wikidata.
 Type: Package
-Version: 1.1.1
-Date: 2021-02-07
+Version: 1.1.2
+Date: 2021-12-06
 License: MIT + file LICENSE
 URL: https://docs.ropensci.org/webchem/,
         https://github.com/ropensci/webchem
@@ -29,13 +29,15 @@ LazyData: yes
 Encoding: UTF-8
 Depends: R (>= 3.0)
 Imports: xml2, httr, rvest, jsonlite, stringr, methods, dplyr, purrr,
-        data.tree, tibble, base64enc, rlang
+        data.tree, tibble, base64enc, rlang, utils
 Suggests: testthat, rcdk, covr, robotstxt, knitr, rmarkdown,
-        plot.matrix, usethis
-RoxygenNote: 7.1.1
+        plot.matrix, usethis, vcr
+RoxygenNote: 7.1.2
 VignetteBuilder: knitr
+Config/testthat/edition: 3
+Config/testthat/parallel: true
 NeedsCompilation: no
-Packaged: 2021-02-07 06:48:53 UTC; tomi
+Packaged: 2021-12-06 11:09:54 UTC; tamas
 Author: Eduard Szöcs [aut],
   Robert Allaway [ctb],
   Daniel Muench [ctb],
@@ -47,4 +49,4 @@ Author: Eduard Szöcs [aut],
   Gordon Getzinger [ctb],
   Tamás Stirling [ctb, cre]
 Repository: CRAN
-Date/Publication: 2021-02-07 07:30:02 UTC
+Date/Publication: 2021-12-06 12:50:02 UTC

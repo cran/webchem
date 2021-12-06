@@ -31,7 +31,8 @@
 #' is.inchikey('BQJCRHHNABKAKU/KBQPJGBKSA/N')
 #' is.inchikey('BQJCRHHNABKAKU-KBQPJGBKXA-N')
 #' is.inchikey('BQJCRHHNABKAKU-KBQPJGBKSB-N')
-is.inchikey = function(x, type = c('format', 'chemspider'), verbose = TRUE) {
+is.inchikey = function(x, type = c('format', 'chemspider'),
+                       verbose = getOption("verbose")) {
   # x <- 'BQJCRHHNABKAKU-KBQPJGBKSA-N'
   if (length(x) > 1) {
     stop('Cannot handle multiple input strings.')
@@ -64,7 +65,7 @@ is.inchikey = function(x, type = c('format', 'chemspider'), verbose = TRUE) {
 #' is.inchikey_cs('BQJCRHHNABKAKU-KBQPJGBKXA-N')
 #' is.inchikey_cs('BQJCRHHNABKAKU-KBQPJGBKSB-N')
 #' }
-is.inchikey_cs <- function(x, verbose = TRUE){
+is.inchikey_cs <- function(x, verbose = getOption("verbose")){
 
   if (!ping_service("cs_web")) stop(webchem_message("service_down"))
 
@@ -128,7 +129,7 @@ is.inchikey_cs <- function(x, verbose = TRUE){
 #' is.inchikey_format('BQJCRHHNABKAKU-KBQPJGBKXA-N')
 #' is.inchikey_format('BQJCRHHNABKAKU-KBQPJGBKSB-N')
 #' }
-is.inchikey_format = function(x, verbose = TRUE) {
+is.inchikey_format = function(x, verbose = getOption("verbose")) {
   # x <- 'BQJCRHHNABKAKU-KBQPJGBKSA-N'
   if (length(x) > 1) {
     stop('Cannot handle multiple input strings.')
@@ -200,11 +201,12 @@ is.inchikey_format = function(x, verbose = TRUE) {
 #' is.cas('64-177-6')
 #' is.cas('64-17-55')
 #' is.cas('64-17-6')
-is.cas <-  function(x, verbose = TRUE) {
+is.cas <-  function(x, verbose = getOption("verbose")) {
 
   foo <- function(x, verbose) {
     # pass NA's through
     if (is.na(x)) return(NA)
+
     # cas must not have any alpha characters
     if (grepl(pattern = "[[:alpha:]]", x = x)) {
       if (isTRUE(verbose)) {
@@ -213,6 +215,13 @@ is.cas <-  function(x, verbose = TRUE) {
       return(FALSE)
     }
 
+    # cas must not have any white space
+    if (grepl(pattern = "\\s+", x = x)) {
+      if(isTRUE(verbose)) {
+        message(x, ": String contains whitespace")
+      }
+      return(FALSE)
+    }
     # cas must have two hyphens
     nsep <- str_count(x, '-')
     if (nsep != 2) {
@@ -282,7 +291,7 @@ is.cas <-  function(x, verbose = TRUE) {
 #' is.smiles('Clc(c(Cl)c(Cl)c1C(=O)O)c(Cl)c1Cl')
 #' is.smiles('Clc(c(Cl)c(Cl)c1C(=O)O)c(Cl)c1ClJ')
 #' }
-is.smiles <- function(x, verbose = TRUE) {
+is.smiles <- function(x, verbose = getOption("verbose")) {
   if (!requireNamespace("rcdk", quietly = TRUE)) {
     stop("rcdk needed for this function to work. Please install it.",
          call. = FALSE)
@@ -340,6 +349,7 @@ extr_num <- function(x) {
 #' @export
 
 parse_mol <- function(string) {
+  if (!is.character(string)) stop("string is not a character string")
   if (length(string) > 1)
     stop('string must be of length 1')
   m <- readLines(textConnection(string))
@@ -350,21 +360,49 @@ parse_mol <- function(string) {
   nchar(cl)
   splits <- c(seq(1, 33, by = 3), 34)
   cl <- trimws(substring(cl, splits, c(splits[-1] - 1, nchar(cl))))
-  names(cl) <- c('a', 'b', 'l', 'f', 'c', 's', 'x', 'r', 'p', 'i', 'm', 'p')
   # atom block
   na <- as.numeric(cl[1])
   ab <- m[5:(4 + na)]
   ab <- read.table(text = ab)
-  names(ab) <- c('x', 'y', 'z', 'a', 'd', 'c', 's', 'h', 'b', 'v', 'H', 'm',
-                 'n', 'e')
   # bound block
   nb <- as.numeric(cl[2])
   bb <- m[(5 + na):(4 + na + nb)]
   bb <- read.table(text = bb)
-  names(bb) <- c('1', '2', 't', 's', 'x', 'r', 'c')
   return(list(eh = h, cl = cl, ab = ab, bb = bb))
 }
 
+#' Export a Chemical Structure in .mol Format.
+#'
+#' Some webchem functions return character strings that contain a chemical
+#' structure in Mol format. This function exports a character string as a .mol
+#' file so it can be imported with other chemistry software.
+#' @param x a character string of a chemical structure in mol format.
+#' @param file a character vector of file names
+#' @export
+#' @examples
+#' \dontrun{
+#' # export Mol file
+#' csid <- get_csid("bergapten")
+#' mol3d <- cs_compinfo(csid$csid, field = "Mol3D")
+#' write_mol(mol3d$mol3D, file = mol3d$id)
+#'
+#' # export multiple Mol files
+#' csids <- get_csid(c("bergapten", "xanthotoxin"))
+#' mol3ds <- cs_compinfo(csids$csid, field = "Mol3D")
+#' mapply(function(x, y) write_mol(x, y), x = mol3ds$mol3D, y = mol3ds$id)
+#' }
+write_mol <- function(x, file = "") {
+  if (!is.character(x)) stop("x is not a character string")
+  mol <- try(parse_mol(x), silent = TRUE)
+  if (inherits(mol, "try-error")) {
+    stop ("x is not a Mol string")
+  }
+  utils::write.table(x,
+                     file = file,
+                     row.names = FALSE,
+                     col.names= FALSE,
+                     quote = FALSE)
+}
 
 #' Format numbers as CAS numbers
 #' @description This function attempts to format numeric (or character) vectors
@@ -424,7 +462,7 @@ matcher <-
            result = NULL,
            match = c("all", "best", "first", "ask", "na"),
            from = NULL,
-           verbose = FALSE) {
+           verbose = getOption("verbose")) {
 
     match <- match.arg(match)
     names(x) <- result
@@ -436,7 +474,8 @@ matcher <-
 
       if (!is.null(from)) {
         if (!str_detect(tolower(from), "name") & match == "best") {
-          warning("match = 'best' only makes sense for chemical name queries.\n Setting match = 'first'.")
+          warning("match = 'best' only makes sense for chemical name queries.\n
+                  Setting match = 'first'.")
           match <- "first"
         }
       }

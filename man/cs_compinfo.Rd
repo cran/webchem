@@ -4,7 +4,7 @@
 \alias{cs_compinfo}
 \title{Retrieve record details by ChemSpider ID}
 \usage{
-cs_compinfo(csid, fields, verbose = TRUE, apikey = NULL)
+cs_compinfo(csid, fields, verbose = getOption("verbose"), apikey = NULL)
 }
 \arguments{
 \item{csid}{numeric; can be obtained using \code{\link{get_csid}}}
@@ -44,5 +44,5 @@ cs_compinfo(171:182, "SMILES")
 }
 }
 \references{
-\url{https://developer.rsc.org/compounds-v1/apis}
+\url{https://developer.rsc.org/docs/compounds-v1-trial/1/overview}
 }

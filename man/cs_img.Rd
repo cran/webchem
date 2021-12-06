@@ -4,7 +4,13 @@
 \alias{cs_img}
 \title{Download images from ChemSpider}
 \usage{
-cs_img(csid, dir, overwrite = TRUE, apikey = NULL, verbose = TRUE)
+cs_img(
+  csid,
+  dir,
+  overwrite = TRUE,
+  apikey = NULL,
+  verbose = getOption("verbose")
+)
 }
 \arguments{
 \item{csid}{numeric; the ChemSpider ID (CSID) of the substance. This will
@@ -36,7 +42,7 @@ cs_img(c(582, 682), dir = tempdir())
 }
 }
 \references{
-\url{https://developer.rsc.org/compounds-v1/apis}
+\url{https://developer.rsc.org/docs/compounds-v1-trial/1/overview}
 }
 \seealso{
 \code{\link{get_csid}}, \code{\link{cs_check_key}}

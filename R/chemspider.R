@@ -42,13 +42,13 @@ cs_check_key <- function() {
 #' @note An API key is needed. Register at \url{https://developer.rsc.org/}
 #' for an API key. Please respect the Terms & Conditions. The Terms & Conditions
 #' can be found at \url{https://developer.rsc.org/terms}.
-#' @references \url{https://developer.rsc.org/compounds-v1/apis}
+#' @references \url{https://developer.rsc.org/docs/compounds-v1-trial/1/overview}
 #' @export
 #' @examples
 #' \dontrun{
 #' cs_datasources()
 #' }
-cs_datasources <- function(apikey = NULL, verbose = TRUE) {
+cs_datasources <- function(apikey = NULL, verbose = getOption("verbose")) {
   if (is.null(apikey)) {
     apikey <- cs_check_key()
   }
@@ -107,7 +107,7 @@ cs_datasources <- function(apikey = NULL, verbose = TRUE) {
 #' Each API uses a subset of these controls.
 #' The controls that are available for a given function are indicated within the
 #' documentation of the function.
-#' @references \url{https://developer.rsc.org/compounds-v1/apis}
+#' @references \url{https://developer.rsc.org/docs/compounds-v1-trial/1/overview}
 #' @seealso \code{\link{get_csid}}
 #' @export
 #' @examples
@@ -160,7 +160,7 @@ cs_control <- function(datasources = vector(),
 #' @note An API key is needed. Register at \url{https://developer.rsc.org/} for
 #'   an API key. Please respect the Terms & conditions:
 #'   \url{https://developer.rsc.org/terms}.
-#' @references \url{https://developer.rsc.org/compounds-v1/apis}
+#' @references \url{https://developer.rsc.org/docs/compounds-v1-trial/1/overview}
 #' @references Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
 #' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
 #' Information from the Web. Journal of Statistical Software, 93(13).
@@ -180,7 +180,7 @@ cs_control <- function(datasources = vector(),
 get_csid <- function(query,
                      from = c("name", "formula", "inchi", "inchikey", "smiles"),
                      match = c("all", "first", "ask", "na"),
-                     verbose = TRUE,
+                     verbose = getOption("verbose"),
                      apikey = NULL,
                      ...) {
   if (is.null(apikey)) {
@@ -332,7 +332,7 @@ get_csid <- function(query,
 #' @note An API key is needed. Register at \url{https://developer.rsc.org/}
 #' for an API key. Please respect the Terms & Conditions. The Terms & Conditions
 #' can be found at \url{https://developer.rsc.org/terms}.
-#' @references \url{https://developer.rsc.org/compounds-v1/apis}
+#' @references \url{https://developer.rsc.org/docs/compounds-v1-trial/1/overview}
 #' @references Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
 #' Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
 #' Information from the Web. Journal of Statistical Software, 93(13).
@@ -351,7 +351,8 @@ get_csid <- function(query,
 #' )
 #' cs_convert(160, from = "csid", to = "smiles")
 #' }
-cs_convert <- function(query, from, to, verbose = TRUE, apikey = NULL) {
+cs_convert <- function(query, from, to, verbose = getOption("verbose"),
+                       apikey = NULL) {
   if (is.null(apikey)) {
     apikey <- cs_check_key()
   }
@@ -407,7 +408,7 @@ cs_convert <- function(query, from, to, verbose = TRUE, apikey = NULL) {
     }
     headers <- c(`Content-Type` = "", `apikey` = apikey)
     body <- list(
-      "input" = query, "inputFormat" = from,
+      "input" = x, "inputFormat" = from,
       "outputFormat" = to
     )
     if (verbose) webchem_message("query", x, appendLF = FALSE)
@@ -462,14 +463,15 @@ cs_convert <- function(query, from, to, verbose = TRUE, apikey = NULL) {
 #' @note An API key is needed. Register at \url{https://developer.rsc.org/}
 #' for an API key. Please respect the Terms & Conditions. The Terms & Conditions
 #' can be found at \url{https://developer.rsc.org/terms}.
-#' @references \url{https://developer.rsc.org/compounds-v1/apis}
+#' @references \url{https://developer.rsc.org/docs/compounds-v1-trial/1/overview}
 #' @export
 #' @examples
 #' \dontrun{
 #' cs_compinfo(171, c("SMILES", "CommonName"))
 #' cs_compinfo(171:182, "SMILES")
 #' }
-cs_compinfo <- function(csid, fields, verbose = TRUE, apikey = NULL) {
+cs_compinfo <- function(csid, fields, verbose = getOption("verbose"),
+                        apikey = NULL) {
   if (mean(is.na(csid)) == 1) {
     if (verbose) webchem_message("na")
     return(NA)
@@ -552,7 +554,7 @@ cs_compinfo <- function(csid, fields, verbose = TRUE, apikey = NULL) {
 #' csids <- get_csid(c('Aspirin', 'Triclosan'))
 #' cs_compinfo(csids)
 #' }
-cs_extcompinfo <- function(csid, token, verbose = TRUE, ...) {
+cs_extcompinfo <- function(csid, token, verbose = getOption("verbose"), ...) {
   .Deprecated("cs_compinfo()", old = "cs_extcompinfo()",
               msg = "'cs_extcompinfo' is deprecated.
 use 'cs_commpinfo()' instead.")
@@ -616,7 +618,7 @@ use 'cs_commpinfo()' instead.")
 #' @note An API key is needed. Register at \url{https://developer.rsc.org/}
 #' for an API key. Please respect the Terms & Conditions. The Terms & Conditions
 #' can be found at \url{https://developer.rsc.org/terms}.
-#' @references \url{https://developer.rsc.org/compounds-v1/apis}
+#' @references \url{https://developer.rsc.org/docs/compounds-v1-trial/1/overview}
 #' @seealso \code{\link{get_csid}}, \code{\link{cs_check_key}}
 #' @export
 #' @examples
@@ -627,7 +629,7 @@ cs_img <- function(csid,
                    dir,
                    overwrite = TRUE,
                    apikey = NULL,
-                   verbose = TRUE) {
+                   verbose = getOption("verbose")) {
   overwrite <- match.arg(as.character(overwrite), choices = c(TRUE, FALSE))
   if (is.null(apikey)) {
     apikey <- cs_check_key()

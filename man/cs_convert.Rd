@@ -4,7 +4,7 @@
 \alias{cs_convert}
 \title{Convert identifiers using ChemSpider}
 \usage{
-cs_convert(query, from, to, verbose = TRUE, apikey = NULL)
+cs_convert(query, from, to, verbose = getOption("verbose"), apikey = NULL)
 }
 \arguments{
 \item{query}{character; query ID.}
@@ -59,7 +59,7 @@ cs_convert(160, from = "csid", to = "smiles")
 }
 }
 \references{
-\url{https://developer.rsc.org/compounds-v1/apis}
+\url{https://developer.rsc.org/docs/compounds-v1-trial/1/overview}
 
 Eduard Szöcs, Tamás Stirling, Eric R. Scott, Andreas Scharmüller,
 Ralf B. Schäfer (2020). webchem: An R Package to Retrieve Chemical
