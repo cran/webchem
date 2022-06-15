@@ -9,8 +9,9 @@
 #' @param query character; The searchterm
 #' @param from character; Type of input, can be one of "name" (chemical name),
 #' "cas" (CAS Number), "ec" (European Community number for regulatory purposes),
-#' "gsbl" (Identifier used by \url{https://www.gsbl.de}) and "rtecs" (Identifier used
-#' by the Registry of Toxic Effects of Chemical Substances database).
+#' "gsbl" (Identifier used by \url{https://www.chemikalieninfo.de/}) and "rtecs"
+#' (Identifier used by the Registry of Toxic Effects of Chemical Substances
+#' database).
 #' @param match character; How should multiple hits be handeled? "all" returns
 #' all matched IDs, "first" only the first match, "best" the best matching (by
 #' name) ID, "ask" is a interactive mode and the user is asked for input, "na"
@@ -208,9 +209,9 @@ etox_basic <- function(id, verbose = getOption("verbose")) {
       gsbl <- binf[, 1][binf[, 2] == 'GSBL']
 
       syns <- tabs[[2]][c(1, 3, 4)]
-      colnames(syns) <- syns[1, ]
+      colnames(syns) <- as.character(syns[1, ])
       syns <- syns[-1, ]
-      syns <- syns[syns[ , 2] == 'SYNONYM' & !is.na(syns[ , 2]), ]
+      syns <- syns[syns[[2]] == 'SYNONYM' & !is.na(syns[[2]]), ] #syns[[2]] or syns$ETOX_NAME?
       syns <- syns[ , -2]
       names(syns) <- c('name', 'language')
 

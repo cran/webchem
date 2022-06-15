@@ -79,7 +79,7 @@
 #' @importFrom utils URLencode
 #' @export
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # might fail if API is not available
 #' get_cid("Triclosan")
 #' get_cid("Triclosan", arg = "name_type=word")
@@ -183,13 +183,21 @@ get_cid <-
                       "json",
                       sep = "/")
       } else {
-        qurl <- paste("https://pubchem.ncbi.nlm.nih.gov/rest/pug",
-                      domain,
-                      from,
-                      URLencode(as.character(query), reserved = TRUE),
-                      "cids",
-                      "json",
-                      sep = "/")
+        if (from == "smiles") {
+          qurl <- paste0("https://pubchem.ncbi.nlm.nih.gov/rest/pug/",
+                         domain, "/",
+                         from, "/",
+                         "cids/JSON?smiles=",
+                         URLencode(as.character(query), reserved = TRUE))
+        } else {
+          qurl <- paste("https://pubchem.ncbi.nlm.nih.gov/rest/pug",
+                        domain,
+                        from,
+                        URLencode(as.character(query), reserved = TRUE),
+                        "cids",
+                        "json",
+                        sep = "/")
+        }
       }
       if (!is.null(arg)) qurl <- paste0(qurl, "?", arg)
       webchem_sleep(type = 'API')
@@ -307,7 +315,7 @@ get_cid <-
 #' \url{https://pubchem.ncbi.nlm.nih.gov/sources/}.
 #' @export
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # might fail if API is not available
 #' pc_prop(5564)
 #'
@@ -441,7 +449,7 @@ pc_prop <- function(cid, properties = NULL, verbose = getOption("verbose"), ...)
 #' \url{https://pubchem.ncbi.nlm.nih.gov/sources/}.
 #' @export
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' pc_synonyms("Aspirin")
 #' pc_synonyms(c("Aspirin", "Triclosan"))
 #' pc_synonyms(5564, from = "cid")
@@ -547,7 +555,7 @@ pc_synonyms <- function(query,
 #' @seealso \code{\link{get_cid}}, \code{\link{pc_prop}}
 #' @examples
 #' # might fail if API is not available
-#' \donttest{
+#' \dontrun{
 #' pc_sect(176, "Dissociation Constants")
 #' pc_sect(c(176, 311), "density")
 #' pc_sect(2231, "depositor-supplied synonyms", "substance")
@@ -597,7 +605,7 @@ pc_sect <- function(id,
 #' (2019). \doi{10.1186/s13321-019-0375-2}.
 #' @examples
 #' # might fail if API is not available
-#' \donttest{
+#' \dontrun{
 #' pc_page(c(176, 311), "Dissociation Constants")
 #' pc_page(49854366, "external id", domain = "substance")
 #' }
@@ -676,7 +684,7 @@ pc_page <- function(id,
 #' (2019). \doi{10.1186/s13321-019-0375-2}.
 #' @examples
 #' # might fail if API is not available
-#' \donttest{
+#' \dontrun{
 #' comps <- pc_page(c(176, 311), "Dissociation Constants")
 #' pc_extract(comps, "Dissociation Constants")
 #' subs <- pc_page(49854366, "external id", domain = "substance")
