@@ -188,7 +188,7 @@ get_csid <- function(query,
   }
   from <- match.arg(from)
   match <- match.arg(match)
-  if (!ping_service("cs")) stop(webchem_message("service_down"))
+  if (!ping_service("cs", apikey = apikey)) stop(webchem_message("service_down"))
   foo <- function(x, from, match, verbose, apikey, ...) {
     if (is.na(x)) {
       if (verbose) webchem_message("na")
@@ -221,6 +221,7 @@ get_csid <- function(query,
     }
     if (verbose) webchem_message("query", x, appendLF = FALSE)
     qurl <- paste0("https://api.rsc.org/compounds/v1/filter/", from)
+    webchem_sleep(type = 'API')
     postres <- try(httr::RETRY("POST",
                                url = qurl,
                                httr::add_headers(.headers = headers),
@@ -236,6 +237,7 @@ get_csid <- function(query,
       qurl <- paste0("https://api.rsc.org/compounds/v1/filter/",
                      query_id,
                      "/status")
+      webchem_sleep(type = 'API')
       getstatus <- try(httr::RETRY("GET",
                                    url = qurl,
                                    httr::add_headers(.headers = headers),
@@ -249,6 +251,7 @@ get_csid <- function(query,
         qurl <- paste0("https://api.rsc.org/compounds/v1/filter/",
                        query_id,
                        "/results")
+        webchem_sleep(type = 'API')
         getres <- try(httr::RETRY("GET",
                                   url = qurl,
                                   httr::add_headers(.headers = headers),
@@ -414,6 +417,7 @@ cs_convert <- function(query, from, to, verbose = getOption("verbose"),
     if (verbose) webchem_message("query", x, appendLF = FALSE)
     body <- jsonlite::toJSON(body, auto_unbox = TRUE)
     qurl <- "https://api.rsc.org/compounds/v1/tools/convert"
+    webchem_sleep(type = 'API')
     postres <- try(httr::RETRY("POST",
                                url = qurl,
                                httr::add_headers(.headers = headers),
@@ -497,6 +501,7 @@ cs_compinfo <- function(csid, fields, verbose = getOption("verbose"),
   body <- jsonlite::toJSON(body)
   if (verbose) webchem_message("query_all", appendLF = FALSE)
   qurl <- "https://api.rsc.org/compounds/v1/records/batch"
+  webchem_sleep(type = 'API')
   postres <- try(httr::RETRY("POST",
                              url = qurl,
                              httr::add_headers(.headers = headers),
@@ -646,6 +651,7 @@ cs_img <- function(csid,
     path <- paste0(dir, "/", csid, ".png")
     url <- paste0("https://api.rsc.org/compounds/v1/records/", csid, "/image")
     headers <- c("Content-Type" = "", "apikey" = apikey)
+    webchem_sleep(type = 'API')
     res <- try(httr::RETRY("GET",
                            url,
                            httr::add_headers(.headers = headers),

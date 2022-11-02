@@ -1,6 +1,9 @@
 #' Ping an API used in webchem to see if it's working.
 #'
-#' @param service character; the same abbreviations used as prefixes in \code{webchem} functions, with the exception of \code{"cs_web"}, which only checks if the ChemSpider website is up, and thus doesn't require an API key.
+#' @param service character; the same abbreviations used as prefixes in
+#' \code{webchem} functions, with the exception of \code{"cs_web"}, which only
+#' checks if the ChemSpider website is up, and thus doesn't require an API key.
+#' @param apikey character; API key for services that require API keys
 #' @import httr
 #' @return A logical, TRUE if the service is available or FALSE if it isn't
 #' @export
@@ -12,6 +15,7 @@ ping_service <-
   function(service = c(
     "bcpc",
     "chebi",
+    "chembl",
     "ci",
     "cs",
     "cs_web",
@@ -25,17 +29,18 @@ ping_service <-
     "pc",
     "srs",
     "wd"
-  )
+  ), apikey = NULL
   ) {
     service <- match.arg(service)
 
-    #if pinging service requires POST request, write separate non-exported function, and call here:
+    #if pinging service requires POST request, write separate non-exported
+    #function, and call here:
     if (service %in% c("pc", "chebi", "cs", "etox")) {
       out <-
         switch(service,
                "pc" = ping_pubchem() & ping_pubchem_pw(),
                "chebi" = ping_chebi(),
-               "cs" = ping_cs(),
+               "cs" = ping_cs(apikey = apikey),
                "etox" = ping_etox()
                )
     } else {
@@ -43,6 +48,7 @@ ping_service <-
       ping_url <-
         switch(service,
                "bcpc" = "https://pesticidecompendium.bcpc.org/introduction.html",
+               "chembl" = "https://www.ebi.ac.uk/chembl/api/data/molecule/CHEMBL1082.json",
                "ci" = "https://chem.nlm.nih.gov/chemidplus/rn/50-00-0",
                "cir" = "http://cactus.nci.nih.gov/chemical/structure/Triclosan/cas/xml",
                "cts" = "http://cts.fiehnlab.ucdavis.edu/service/compound/XEFQLINVKFYRCS-UHFFFAOYSA-N",
@@ -56,8 +62,8 @@ ping_service <-
         )
       if (identical(service, "bcpc")) {
         # For the BCPC server we need to disable gzip encoding as it currently
-        # (2021-11-18) results in 
-        # Error in curl_fetch_memory(https://...): 
+        # (2021-11-18) results in
+        # Error in curl_fetch_memory(https://...):
         # "Failed writing received data to disk/application"
         httr_config <- httr::config(accept_encoding = "identity")
       } else {
@@ -111,13 +117,18 @@ ping_etox <- function(...) {
 #' @import httr
 #' @import jsonlite
 #' @noRd
+#' @param apikey character; your API key. If NULL (default),
+#'   \code{cs_check_key()} will look for it in .Renviron or .Rprofile.
 #' @return TRUE if ChemSpider is reachable
 #' @examples
 #' \dontrun{
 #'  ping_cs()
 #'  }
-ping_cs <- function(...) {
-  headers <- c("Content-Type" = "", "apikey" = cs_check_key())
+ping_cs <- function(apikey = NULL) {
+  if (is.null(apikey)) {
+    apikey <- cs_check_key()
+  }
+  headers <- c("Content-Type" = "", "apikey" = apikey)
   body <- list("name" = "triclosan", "orderBy" = "recordId", "orderDirection" = "ascending")
   body <- jsonlite::toJSON(body, auto_unbox = TRUE)
   res <- try(httr::RETRY("POST",
