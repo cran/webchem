@@ -19,8 +19,8 @@
 #' \code{domain}:
 #' \itemize{
 #' \item{\code{compound}: \code{"name"}, \code{"smiles"}, \code{"inchi"},
-#' \code{"inchikey"}, \code{"formula"}, \code{"sdf"}, <xref>,
-#' <structure search>, <fast search>.}
+#' \code{"inchikey"}, \code{"formula"}, \code{"sdf"}, \code{"cas"} (an alias for
+#' \code{"xref/RN"}), <xref>, <structure search>, <fast search>.}
 #' \item{\code{substance}: \code{"name"}, \code{"sid"},
 #' \code{<xref>}, \code{"sourceid/<source id>"} or \code{"sourceall"}.}
 #' \item{\code{assay}: \code{"aid"}, \code{<assay target>}.}
@@ -69,7 +69,7 @@
 #' Medicine, \url{https://www.nlm.nih.gov/databases/download.html} the data
 #' usage policies of National Center for Biotechnology Information,
 #' \url{https://www.ncbi.nlm.nih.gov/home/about/policies/},
-#' \url{https://pubchemdocs.ncbi.nlm.nih.gov/programmatic-access}, and the data
+#' \url{https://pubchem.ncbi.nlm.nih.gov/docs/programmatic-access}, and the data
 #' usage policies of the indicidual data sources
 #' \url{https://pubchem.ncbi.nlm.nih.gov/sources/}.
 #' @import httr
@@ -133,6 +133,10 @@ get_cid <-
   }
     #input validation
     from <- tolower(from)
+    from <- ifelse(from == "cas", "xref/rn", from)
+    if (from == "xref/rn"){
+       query <- as.cas(query, verbose = verbose)
+    }
     domain <- match.arg(domain)
     xref <- paste(
       "xref",
@@ -283,7 +287,7 @@ get_cid <-
 #' @param properties character vector; properties to retrieve, e.g.
 #' c("MolecularFormula", "MolecularWeight"). If NULL (default) all available
 #' properties are retrieved. See
-#' \url{https://pubchemdocs.ncbi.nlm.nih.gov/pug-rest}
+#' \url{https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest}
 #' for a list of all available properties.
 #' @param verbose logical; should a verbose output be printed to the console?
 #' @param ... currently not used.
@@ -310,7 +314,7 @@ get_cid <-
 #' Medicine, \url{https://www.nlm.nih.gov/databases/download.html} the data
 #' usage policies of National Center for Biotechnology Information,
 #' \url{https://www.ncbi.nlm.nih.gov/home/about/policies/},
-#' \url{https://pubchemdocs.ncbi.nlm.nih.gov/programmatic-access}, and the data
+#' \url{https://pubchem.ncbi.nlm.nih.gov/docs/programmatic-access}, and the data
 #' usage policies of the indicidual data sources
 #' \url{https://pubchem.ncbi.nlm.nih.gov/sources/}.
 #' @export
@@ -444,7 +448,7 @@ pc_prop <- function(cid, properties = NULL, verbose = getOption("verbose"), ...)
 #' Medicine, \url{https://www.nlm.nih.gov/databases/download.html} the data
 #' usage policies of National Center for Biotechnology Information,
 #' \url{https://www.ncbi.nlm.nih.gov/home/about/policies/},
-#' \url{https://pubchemdocs.ncbi.nlm.nih.gov/programmatic-access}, and the data
+#' \url{https://pubchem.ncbi.nlm.nih.gov/docs/programmatic-access}, and the data
 #' usage policies of the indicidual data sources
 #' \url{https://pubchem.ncbi.nlm.nih.gov/sources/}.
 #' @export
@@ -468,6 +472,8 @@ pc_synonyms <- function(query,
   # from = "name"
   from <- match.arg(from)
   match <- match.arg(match)
+  names(query) <- query
+
   if (!missing("choices"))
     stop("'choices' is deprecated. Use 'match' instead.")
   foo <- function(query, from, verbose, ...) {
@@ -511,7 +517,6 @@ pc_synonyms <- function(query,
     }
   }
   out <- lapply(query, foo, from = from, verbose = verbose)
-  names(out) <- query
   if (!is.null(choices)) #if only one choice is returned, convert list to vector
     out <- unlist(out)
   return(out)
@@ -546,7 +551,7 @@ pc_synonyms <- function(query,
 #' Medicine, \url{https://www.nlm.nih.gov/databases/download.html} the data
 #' usage policies of National Center for Biotechnology Information,
 #' \url{https://www.ncbi.nlm.nih.gov/home/about/policies/},
-#' \url{https://pubchemdocs.ncbi.nlm.nih.gov/programmatic-access}, and the data
+#' \url{https://pubchem.ncbi.nlm.nih.gov/docs/programmatic-access}, and the data
 #' usage policies of the individual data sources
 #' \url{https://pubchem.ncbi.nlm.nih.gov/sources/}.
 #' @references Kim, S., Thiessen, P.A., Cheng, T. et al. PUG-View: programmatic
@@ -641,6 +646,10 @@ pc_page <- function(id,
     if (verbose) message(httr::message_for_status(res))
     if (res$status_code == 200) {
       cont <- httr::content(res, type = "text", encoding = "UTF-8")
+      # Intercepting any NA cont before it gets to fromJSON.
+      if(is.na(cont)) {
+        return(NA)
+      }
       cont <- jsonlite::fromJSON(cont, simplifyDataFrame = FALSE)
       tree <- data.tree::as.Node(cont, nameName = "TOCHeading")
       tree$Do(function(node) node$name <- tolower(node$name))

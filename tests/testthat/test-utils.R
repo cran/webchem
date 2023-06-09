@@ -28,7 +28,7 @@ test_that("is.cas() returns correct results", {
 })
 
 test_that("as.cas() handles properly formatted CAS",{
-  expect_identical(as.cas("64-17-5"), "64-17-5")
+  expect_equal(as.cas("64-17-5"), "64-17-5", ignore_attr=TRUE)
   expect_silent(as.cas("64-17-5"))
 })
 
@@ -66,6 +66,7 @@ test_that("is.inchikey() returns correct results", {
 
 
 test_that("is.smiles() returns correct results", {
+  skip_if_not_installed("rcdk")
   expect_true(is.smiles('Clc1ccc(cc1)C(c2ccc(Cl)cc2)C(Cl)(Cl)Cl'))
   expect_false(suppressWarnings(
     is.smiles('Clc1ccc(cc1)C(c2ccc(Cl)cc2)C(Cl)(Cl)ClWWX')))

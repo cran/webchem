@@ -62,3 +62,31 @@ cs_prop <- function() {
     the scraping of ChemSpider pages."
   )
 }
+
+#' @rdname webchem-defunct
+#' @export
+ci_query <- function() {
+  .Defunct(
+    "ci_query",
+    package = "webchem",
+    msg = paste0(
+      "ci_query() has been removed from the package because NLM had retired ",
+      "ChemIDplus. According to NLM all data found in ChemIDplus is available ",
+      "in PubChem. 'webchem' provides a number of functions for ",
+      "programmatically accessing PubChem."
+    )
+  )
+}
+
+#' @rdname webchem-defunct
+#' @export
+pan_query <- function() {
+  .Defunct(
+    "pan_query",
+    package = "webchem",
+    msg = paste0(
+      "pan_query() has been removed from the package because programmatic ",
+      "access to the Pesticide Action Network database is no longer supported."
+    )
+  )
+}

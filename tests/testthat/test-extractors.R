@@ -9,21 +9,6 @@ test_that("extractors work with etox", {
   expect_error(smiles(out_etox_basic))
 })
 
-test_that("extractors work with chemid", {
-  skip_on_cran()
-  skip_if_not(ping_service("ci"), "CHEMID service is down")
-
-  out_ci_query <- suppressWarnings(ci_query(
-    c("BSYNRYMUTXBXSQ-UHFFFAOYSA-N","XEFQLINVKFYRCS-UHFFFAOYSA-N"),
-    from = "inchikey"))
-  expect_equal(cas(out_ci_query),  c("50-78-2", "3380-34-5"), ignore_attr = TRUE)
-  expect_equal(inchikey(out_ci_query),
-                    c("BSYNRYMUTXBXSQ-UHFFFAOYSA-N",
-                      "XEFQLINVKFYRCS-UHFFFAOYSA-N"), ignore_attr = TRUE)
-  expect_equal(smiles(out_ci_query), c("CC(=O)", "Oc1cc(Cl)"),
-               ignore_attr = TRUE)
-})
-
 test_that("extractors work with opsin", {
   skip_on_cran()
   skip_if_not(ping_service("opsin"), "OPSIN service is down")
@@ -82,16 +67,4 @@ test_that("extractors work with pubchem", {
                     c("C1=CC(=C(C=C1Cl)O)OC2=C(C=C(C=C2)Cl)Cl",
                       "CC(=O)OC1=CC=CC=C1C(=O)O"), ignore_attr = TRUE)
   expect_error(smiles(out_pc_prop2))
-})
-
-test_that("extractors work with PAN", {
-  skip("PAN functions are currently broken")
-  skip_on_cran()
-  skip_if_not(ping_service("pan"), "PAN service is down")
-
-  out_pan_query <- pan_query(c('2,4-dichlorophenol', 'Atrazin'), match = 'best')
-  expect_equal(cas(out_pan_query),  c("120-83-2", "1912-24-9"),
-               ignore_attr = TRUE)
-  expect_error(inchikey(out_pan_query))
-  expect_error(smiles(out_pan_query))
 })

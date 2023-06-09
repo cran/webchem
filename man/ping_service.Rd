@@ -5,8 +5,8 @@
 \title{Ping an API used in webchem to see if it's working.}
 \usage{
 ping_service(
-  service = c("bcpc", "chebi", "chembl", "ci", "cs", "cs_web", "cir", "cts", "etox",
-    "fn", "nist", "opsin", "pan", "pc", "srs", "wd"),
+  service = c("bcpc", "chebi", "chembl", "cs", "cs_web", "cir", "cts", "etox", "fn",
+    "nist", "opsin", "pc", "srs", "wd"),
   apikey = NULL
 )
 }
@@ -25,6 +25,6 @@ Ping an API used in webchem to see if it's working.
 }
 \examples{
 \dontrun{
-ping_service("pan")
+ping_service("chembl")
 }
 }

@@ -32,11 +32,6 @@ cas.opsin_query <- function(x, ...) {
 }
 
 #' @export
-cas.pan_query <- function(x, ...) {
-  sapply(x, function(y) y$`CAS Number`)
-}
-
-#' @export
 cas.bcpc_query <- function(x, ...) {
   sapply(x, function(y) y$cas)
 }
@@ -54,15 +49,6 @@ cas.cts_compinfo <- function(x, ...) {
 
 #' @export
 cas.etox_basic <- function(x, ...) {
-  sapply(x, function(y) {
-    if (length(y) == 1 && is.na(y))
-      return(NA)
-    unique(y$cas)
-  })
-}
-
-#' @export
-cas.ci_query <- function(x, ...) {
   sapply(x, function(y) {
     if (length(y) == 1 && is.na(y))
       return(NA)
@@ -104,11 +90,6 @@ inchikey.etox_basic <- function(x, ...) {
   stop("InChIkey is not returned by this datasource!")
 }
 #' @export
-inchikey.pan_query <- function(x, ...) {
-  stop("InChIkey is not returned by this datasource!")
-}
-
-#' @export
 inchikey.opsin_query <- function(x, ...) {
   x$stdinchikey
 }
@@ -127,15 +108,6 @@ inchikey.wd_ident <- function(x, ...) {
 #' @export
 inchikey.cts_compinfo <- function(x, ...) {
   sapply(x, function(x) x$inchikey)
-}
-
-#' @export
-inchikey.ci_query <- function(x, ...) {
-  sapply(x, function(y) {
-    if (length(y) == 1 && is.na(y))
-      return(NA)
-    unique(y$inchikey)
-  })
 }
 
 # SMILES ------------------------------------------------------------------
@@ -167,10 +139,6 @@ smiles.etox_basic <- function(x, ...) {
   stop("InChIkey is not returned by this datasource!")
 }
 #' @export
-smiles.pan_query <- function(x, ...) {
-  stop("SMILES is not returned by this datasource!")
-}
-#' @export
 smiles.opsin_query <- function(x, ...) {
   x$smiles
 }
@@ -188,13 +156,4 @@ smiles.pc_prop <- function(x, ...) {
 #' @export
 smiles.wd_ident <- function(x, ...) {
   x$smiles
-}
-
-#' @export
-smiles.ci_query <- function(x, ...) {
-  sapply(x, function(y) {
-    if (length(y) == 1 && is.na(y))
-      return(NA)
-    unique(y$smiles)
-  })
 }

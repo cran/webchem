@@ -48,8 +48,8 @@ Valid values for the \code{from} argument depend on the
 \code{domain}:
 \itemize{
 \item{\code{compound}: \code{"name"}, \code{"smiles"}, \code{"inchi"},
-\code{"inchikey"}, \code{"formula"}, \code{"sdf"}, <xref>,
-<structure search>, <fast search>.}
+\code{"inchikey"}, \code{"formula"}, \code{"sdf"}, \code{"cas"} (an alias for
+\code{"xref/RN"}), <xref>, <structure search>, <fast search>.}
 \item{\code{substance}: \code{"name"}, \code{"sid"},
 \code{<xref>}, \code{"sourceid/<source id>"} or \code{"sourceall"}.}
 \item{\code{assay}: \code{"aid"}, \code{<assay target>}.}
@@ -91,7 +91,7 @@ Please respect the Terms and Conditions of the National Library of
 Medicine, \url{https://www.nlm.nih.gov/databases/download.html} the data
 usage policies of National Center for Biotechnology Information,
 \url{https://www.ncbi.nlm.nih.gov/home/about/policies/},
-\url{https://pubchemdocs.ncbi.nlm.nih.gov/programmatic-access}, and the data
+\url{https://pubchem.ncbi.nlm.nih.gov/docs/programmatic-access}, and the data
 usage policies of the indicidual data sources
 \url{https://pubchem.ncbi.nlm.nih.gov/sources/}.
 }

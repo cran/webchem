@@ -1,3 +1,22 @@
+# webchem 1.3.0
+
+## NEW FEATURES
+
+* The `nist_ri` function now returns a column with the CAS number to facilitate querying of multiple retention index tables.
+* The `nist_ri` function can now take multiple arguments for `type`, `polarity` and `temp_prog`.
+* CAS numbers are automatically reformatted using `as.cas` in `bcpc_query`, `cts_convert`, `get_etoxid`, `fn_percept`, `get_cid`, and `srs_query`.
+* The `as.cas` function now has a `verbose` argument.
+
+## DEFUNCT FUNCTIONS
+
+* `ci_query()` has been removed from the package because NLM had retired ChemIDplus.
+* `pan_query()` has been removed from the package because PAN no longer supports programmatic access.
+
+## BUG FIXES
+
+* nist_ri() failed because the behaviour of a dependency had changed. This has been fixed.
+* pc_sect() failed when query response was valid but the content was NA. This has been fixed.
+
 # webchem 1.2.0
 
 ## NEW FEATURES
