@@ -25,19 +25,19 @@
 #' \code{<xref>}, \code{"sourceid/<source id>"} or \code{"sourceall"}.}
 #' \item{\code{assay}: \code{"aid"}, \code{<assay target>}.}
 #' }
-#' @details <structure search> is assembled as "{\code{substructure} |
-#' \code{superstructure} | \code{similarity} | \code{identity}} / {\code{smiles}
-#'  | \code{inchi} | \code{sdf} | \code{cid}}", e.g.
+#' @details <structure search> is assembled as "(\code{substructure} |
+#' \code{superstructure} | \code{similarity} | \code{identity}) / (\code{smiles}
+#'  | \code{inchi} | \code{sdf} | \code{cid})", e.g.
 #'  \code{from = "substructure/smiles"}.
-#' @details \code{<xref>} is assembled as "\code{xref}/\{\code{RegistryID} |
+#' @details \code{<xref>} is assembled as "\code{xref}/(\code{RegistryID} |
 #' \code{RN} | \code{PubMedID} | \code{MMDBID} | \code{ProteinGI},
 #' \code{NucleotideGI} | \code{TaxonomyID} | \code{MIMID} | \code{GeneID} |
-#' \code{ProbeID} | \code{PatentID}\}", e.g. \code{from = "xref/RN"} will query
+#' \code{ProbeID} | \code{PatentID})", e.g. \code{from = "xref/RN"} will query
 #' by CAS RN.
 #' @details <fast search> is either \code{fastformula} or it is assembled as
-#' "{\code{fastidentity} | \code{fastsimilarity_2d} | \code{fastsimilarity_3d} |
-#' \code{fastsubstructure} | \code{fastsuperstructure}}/{\code{smiles} |
-#' \code{smarts} | \code{inchi} | \code{sdf} | \code{cid}}", e.g.
+#' "(\code{fastidentity} | \code{fastsimilarity_2d} | \code{fastsimilarity_3d} |
+#' \code{fastsubstructure} | \code{fastsuperstructure})/(\code{smiles} |
+#' \code{smarts} | \code{inchi} | \code{sdf} | \code{cid})", e.g.
 #' \code{from = "fastidentity/smiles"}.
 #' @details \code{<source id>} is any valid PubChem Data Source ID. When
 #' \code{from = "sourceid/<source id>"}, the query is the ID of the substance in
@@ -46,8 +46,8 @@
 #' depositor names. Depositor names are not case sensitive.
 #' @details Depositor names and Data Source IDs can be found at
 #' \url{https://pubchem.ncbi.nlm.nih.gov/sources/}.
-#' @details \code{<assay target>} is assembled as "\code{target}/\{\code{gi} |
-#' \code{proteinname} | \code{geneid} | \code{genesymbol} | \code{accession}\}",
+#' @details \code{<assay target>} is assembled as "\code{target}/(\code{gi} |
+#' \code{proteinname} | \code{geneid} | \code{genesymbol} | \code{accession})",
 #' e.g. \code{from = "target/geneid"} will query by GeneID.
 #' @references Wang, Y., J. Xiao, T. O. Suzek, et al. 2009 PubChem: A Public
 #' Information System for
@@ -283,16 +283,19 @@ get_cid <-
 #' \url{https://pubchem.ncbi.nlm.nih.gov/}
 #' @import httr jsonlite
 #'
-#' @param cid character; Pubchem ID (CID).
-#' @param properties character vector; properties to retrieve, e.g.
+#' @param cid numeric; a vector of Pubchem IDs (CIDs). The input vector will be
+#' coerced to a vector of positive integers. The function will return a row of
+#' NAs for elements that cannot be coerced to positive integers.
+#' @param properties character; a vector of properties to retrieve, e.g.
 #' c("MolecularFormula", "MolecularWeight"). If NULL (default) all available
 #' properties are retrieved. See
-#' \url{https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest}
+#' \url{https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest#section=Compound-Property-Tables}
 #' for a list of all available properties.
 #' @param verbose logical; should a verbose output be printed to the console?
 #' @param ... currently not used.
 #'
-#' @return a data.frame
+#' @return a tibble; each row is a queried CID, each column is a requested
+#' property.
 #' @seealso \code{\link{get_cid}}, \code{\link{pc_sect}}
 #' @references Wang, Y., J. Xiao, T. O. Suzek, et al. 2009 PubChem: A Public
 #' Information System for
@@ -328,38 +331,98 @@ get_cid <-
 #' comp <- c("Triclosan", "Aspirin")
 #' cids <- get_cid(comp)
 #' pc_prop(cids$cid, properties = c("MolecularFormula", "MolecularWeight",
-#' "CanonicalSMILES"))
+#' "SMILES"))
 #' }
 pc_prop <- function(cid, properties = NULL, verbose = getOption("verbose"), ...) {
 
   if (!ping_service("pc")) stop(webchem_message("service_down"))
 
+  cid_o <- cid
+
+  if (verbose) message("Coercing queries to positive integers. ", appendLF = FALSE)
+
+  cid <- suppressWarnings(as.integer(cid))
+
+  if (verbose) {
+    index <- which(is.na(cid) & !is.na(cid_o))
+    if (length(index) > 0) {
+      for (i in index) {
+        message(paste0(cid_o[index], " coerced to NA. "), appendLF = FALSE)
+      }
+    }
+  }
+
+  if (any(cid <= 0, na.rm = TRUE)) {
+    index <- which(cid <= 0)
+    cid[index] <- NA
+    if (verbose) {
+      for (i in index) {
+        message(paste0(cid_o[index], " coerced to NA. "), appendLF = FALSE)
+      }
+    }
+  }
+
+  if (verbose) message("Done.")
+
   if (mean(is.na(cid)) == 1) {
     if (verbose) webchem_message("na")
     return(NA)
   }
+
   napos <- which(is.na(cid))
-  cid_o <- cid
   cid <- cid[!is.na(cid)]
   prolog <- "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
   input <- "/compound/cid"
   if (is.null(properties))
-    properties <- c("MolecularFormula", "MolecularWeight", "CanonicalSMILES",
-                  "IsomericSMILES", "InChI", "InChIKey", "IUPACName",
-                  "XLogP", "ExactMass", "MonoisotopicMass", "TPSA",
-                  "Complexity", "Charge", "HBondDonorCount",
-                  "HBondAcceptorCount", "RotatableBondCount", "HeavyAtomCount",
-                  "IsotopeAtomCount", "AtomStereoCount",
-                  "DefinedAtomStereoCount", "UndefinedAtomStereoCount",
-                  "BondStereoCount", "DefinedBondStereoCount",
-                  "UndefinedBondStereoCount", "CovalentUnitCount", "Volume3D",
-                  "XStericQuadrupole3D", "YStericQuadrupole3D",
-                  "ZStericQuadrupole3D", "FeatureCount3D",
-                  "FeatureAcceptorCount3D", "FeatureDonorCount3D",
-                  "FeatureAnionCount3D", "FeatureCationCount3D",
-                  "FeatureRingCount3D", "FeatureHydrophobeCount3D",
-                  "ConformerModelRMSD3D", "EffectiveRotorCount3D",
-                  "ConformerCount3D", "Fingerprint2D")
+    properties <- c(
+      "MolecularFormula",
+      "MolecularWeight",
+      "SMILES",
+      "ConnectivitySMILES",
+      "InChI",
+      "InChIKey",
+      "IUPACName",
+      "Title",
+      "XLogP",
+      "ExactMass",
+      "MonoisotopicMass",
+      "TPSA",
+      "Complexity",
+      "Charge",
+      "HBondDonorCount",
+      "HBondAcceptorCount",
+      "RotatableBondCount",
+      "HeavyAtomCount",
+      "IsotopeAtomCount",
+      "AtomStereoCount",
+      "DefinedAtomStereoCount",
+      "UndefinedAtomStereoCount",
+      "BondStereoCount",
+      "DefinedBondStereoCount",
+      "UndefinedBondStereoCount",
+      "CovalentUnitCount",
+      "PatentCount",
+      "PatentFamilyCount",
+      "AnnotationTypes",
+      "AnnotationTypeCount",
+      "SourceCategories",
+      "LiteratureCount",
+      "Volume3D",
+      "XStericQuadrupole3D",
+      "YStericQuadrupole3D",
+      "ZStericQuadrupole3D",
+      "FeatureCount3D",
+      "FeatureAcceptorCount3D",
+      "FeatureDonorCount3D",
+      "FeatureAnionCount3D",
+      "FeatureCationCount3D",
+      "FeatureRingCount3D",
+      "FeatureHydrophobeCount3D",
+      "ConformerModelRMSD3D",
+      "EffectiveRotorCount3D",
+      "ConformerCount3D",
+      "Fingerprint2D"
+    )
   properties <- paste(properties, collapse = ",")
   output <- paste0("/property/", properties, "/JSON")
 
@@ -403,7 +466,9 @@ pc_prop <- function(cid, properties = NULL, verbose = getOption("verbose"), ...)
         }
       }}
     rownames(out) <- NULL
-    class(out) <- c("pc_prop", "data.frame")
+    out$CID <- cid_o
+    out <- tibble::as_tibble(out)
+    class(out) <- c("pc_prop", class(out))
     return(out)
   }
   else {

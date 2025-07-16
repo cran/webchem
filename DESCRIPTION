@@ -6,7 +6,7 @@ Description: Chemical information from around the web. This package interacts
     ChEBI, Chemical Translation Service, ChemSpider, ETOX, Flavornet,
     NIST Chemistry WebBook, OPSIN, PubChem, SRS, Wikidata.
 Type: Package
-Version: 1.3.0
+Version: 1.3.1
 License: MIT + file LICENSE
 URL: https://docs.ropensci.org/webchem/,
         https://github.com/ropensci/webchem
@@ -26,17 +26,17 @@ Maintainer: Tamás Stirling <stirling.tamas@gmail.com>
 LazyLoad: yes
 LazyData: yes
 Encoding: UTF-8
-Depends: R (>= 3.0)
+Depends: R (>= 4.1.0)
 Imports: xml2, httr, rvest, jsonlite, stringr, methods, dplyr, purrr,
         data.tree, tibble, base64enc, rlang, utils
 Suggests: testthat, rcdk, covr, robotstxt, knitr, rmarkdown,
-        plot.matrix, usethis, vcr
-RoxygenNote: 7.2.3
+        plot.matrix, usethis, vcr (>= 0.6.0)
+RoxygenNote: 7.3.2
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 NeedsCompilation: no
-Packaged: 2023-06-09 13:40:10 UTC; tamas
+Packaged: 2025-07-16 03:48:48 UTC; tamas
 Author: Eduard Szöcs [aut],
   Robert Allaway [ctb],
   Daniel Muench [ctb],
@@ -49,4 +49,4 @@ Author: Eduard Szöcs [aut],
   Ethan Bass [ctb],
   Tamás Stirling [ctb, cre]
 Repository: CRAN
-Date/Publication: 2023-06-09 14:20:02 UTC
+Date/Publication: 2025-07-16 09:50:02 UTC
