@@ -1,3 +1,72 @@
+#' Assert whether object belongs to a class
+#'
+#' @description Checks if an object belongs to a certain class or classes. If
+#' not, stops with an error message.
+#' @param x object to be checked
+#' @param y character; class name(s)
+#' @references Copied from \url{https://github.com/ropensci/taxizedb}
+#' @noRd
+#' @examples
+#' assert(1:10, "integer")
+#' assert(data.frame(a = 1:10), c("data.frame", "list"))
+assert <- function(x, y) {
+  if (!is.null(x)) {
+    if (!inherits(x, y)) {
+      stop(deparse(substitute(x)), " must be of class ",
+           paste0(y, collapse = ", "), call. = FALSE)
+    }
+  }
+}
+
+#' Connect to a database
+#' 
+#' This function connects to a database and returns a connection object. 
+#' Currently, it supports the following databases: "chembl", "eup", and "foodb".
+#' @param db character; database name. Must be one of "chembl", "eup", or "foodb".
+#' @param version character; version of the database. Only applicable for
+#' "chembl". If `NULL` (default), [chembl_check_db_version()] resolves a default
+#' set via .Renviron or .Rprofile.
+#' @param ... Further args passed on to [DBI::dbConnect()]
+#' @return an object of class "SQLiteConnection".
+#' @examples
+#' \dontrun{
+#' # Connect to a specific version of the ChEMBL database
+#' con <- db_connect("chembl", version = "37")
+#' # Connect to the EU Pesticides database
+#' con <- db_connect("eup")
+#' # Connect to the FooDB database
+#' con <- db_connect("foodb")
+#' }
+#' @export
+db_connect <- function(db, version = NULL, ...) {
+  assert(db, "character")
+  db <- match.arg(db, choices = c("chembl", "eup", "foodb"))
+  con <- switch(
+    db,
+    chembl = connect_chembl(version = version, ...),
+    eup = connect_eup(...),
+    foodb = connect_foodb(...)
+  )
+  return(con)
+}
+
+#' Get URLs and file names of local database files
+#'
+#' @param db character; database name. Currently only "chembl" is supported.
+#' @param version character; version of the database.
+#' @return A data frame. Variables depend on the database.
+#' @examples
+#' \dontrun{
+#' db_files("chembl", version = "35")
+#' }
+#' @noRd
+db_files <- function(db, version) {
+  db <- match.arg(db, choices = c("chembl"))
+  if (db == "chembl") {
+    chembl_files(version = version)
+  }
+}
+
 #' Check if input is a valid inchikey
 #'
 #' @description This function checks if a string is a valid inchikey.
@@ -536,6 +605,20 @@ matcher <-
       }
     }
   }
+
+#' Check if an url exists
+#'
+#' @param url url
+#' @noRd
+url_exists <- function(url) {
+  foo <- function(x) {
+    res <- try(httr::HEAD(x), silent = TRUE)
+    if (inherits(res, "try-error")) return(FALSE)
+    status <- httr::status_code(res)
+    status >= 200 && status < 400
+  }
+  unname(sapply(url, foo))
+}
 
 #' Webchem messages
 #'

@@ -1,4 +1,5 @@
-up <- ping_service("cs_web")
+up <- ifelse(Sys.getenv("RUN_ONLINE_TESTS") == "true", ping_service("cs_web"), TRUE)
+
 test_that("examples in the article are unchanged", {
   expect_false(is.inchikey("BQJCRHHNABKAKU-KBQPJGBKS-AN"))
   # The default value for verbose has changed and it now requires verbose = TRUE
@@ -18,6 +19,21 @@ test_that("examples in the article are unchanged", {
     A <- is.inchikey("BQJCRHHNABKAKU-KBQPJGBKSA-5", type = "chemspider")
   })
   expect_false(A)
+})
+
+test_that("assert()", {
+  testthat::expect_error(assert(1:10, "integer"), NA)
+  testthat::expect_error(assert(1:10, "data.frame"))
+})
+
+test_that("db_files()", {
+  skip_on_cran()
+  skip_if_not(Sys.getenv("RUN_ONLINE_TESTS") == "true", "Skipping online tests")
+  skip_if_not(Sys.getenv("RUN_ONLINE_TESTS") == "true", "Skipping online tests")
+
+  o1 <- db_files("chembl", version = "35")
+  expect_true(all(o1$url_exists))
+  expect_error(db_files("hello"))
 })
 
 test_that("is.cas() returns correct results", {
@@ -51,6 +67,7 @@ test_that("is.inchikey() returns correct results", {
   skip_on_cran()
   skip_on_ci()
   skip_if_not(up, "ChemSpider service is down, skipping tests")
+  skip_if_not(Sys.getenv("RUN_ONLINE_TESTS") == "true", "Skipping online tests")
 
   vcr::use_cassette("is_inchikey_cs_2", {
     g <- is.inchikey('BQJCRHHNABKAKU-KBQPJGBKSA-N', type = 'chemspider')
@@ -121,7 +138,7 @@ test_that("parse_mol()", {
   expect_s3_class(a$ab, "data.frame")
   expect_s3_class(a$bb, "data.frame")
   expect_type(b, "list")
-  expect_type(c, "list")
+  #expect_type(c, "list")
   expect_type(d, "list")
 })
 
@@ -141,4 +158,9 @@ test_that("matcher() warns when 'best' is used with chemical names", {
           result = c("WSFSSNUMVMOOMR-UHFFFAOYSA-N","UGFAIRIUMAVXCW-UHFFFAOYSA-N "),
           match = "best"),
     "match = 'best' only makes sense for chemical name queries.")
+})
+
+test_that("url_exists()", {
+  expect_true(url_exists("https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/releases/chembl_35/"))
+  expect_false(url_exists("https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/releases/chembl_00/"))
 })

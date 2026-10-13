@@ -1,7 +1,9 @@
-up <- ping_service("fn")
+up <- ifelse(Sys.getenv("RUN_ONLINE_TESTS") == "true", ping_service("fn"), TRUE)
+
 test_that("fn_percept()", {
   skip_on_cran()
   skip_if_not(up, "Flavornet is unreachable")
+  skip_if_not(Sys.getenv("RUN_ONLINE_TESTS") == "true", "Skipping online tests")
 
   a <- fn_percept("123-32-0")
   b <- fn_percept(c("75-07-0", "123-32-0"))
@@ -15,8 +17,8 @@ test_that("fn_percept()", {
   expect_equal(length(c), 3)
 
   expect_equal(a, structure("cocoa, roasted nut, roast beef, medicine",
-                            .Names = "123-32-0"))
+                            names = "123-32-0"))
   expect_equal(b, structure(c("pungent, ether", "cocoa, roasted nut, roast beef, medicine"
-  ), .Names = c("75-07-0", "123-32-0")))
+  ), names = c("75-07-0", "123-32-0")))
   expect_true(is.na(c[[3]]))
 })

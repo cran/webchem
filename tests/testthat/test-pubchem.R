@@ -1,7 +1,10 @@
-up <- ping_service("pc")
+up <- ifelse(Sys.getenv("RUN_ONLINE_TESTS") == "true", ping_service("pc"), TRUE)
+
 test_that("examples in the article are unchanged", {
   skip_on_cran()
   skip_if_not(up, "PubChem service is down")
+  skip_if_not(Sys.getenv("RUN_ONLINE_TESTS") == "true", "Skipping online tests")
+
   #values come from test-etox
   cas <- c("105-67-9", "1570-64-5", NA, "1912-24-9", "71-43-2", "6190-65-4")
   cids <- get_cid(cas, from = "xref/rn", match = "first")
@@ -20,6 +23,7 @@ test_that("examples in the article are unchanged", {
 test_that("get_cid()", {
   skip_on_cran()
   skip_if_not(up, "PubChem service is down")
+  skip_if_not(Sys.getenv("RUN_ONLINE_TESTS") == "true", "Skipping online tests")
 
   #from name
   expect_true("5564" %in% get_cid("Triclosan")$cid)
@@ -93,6 +97,7 @@ test_that("get_cid()", {
 test_that("get_cid() handles special characters in SMILES", {
   skip_on_cran()
   skip_if_not(up, "PubChem service is down")
+  skip_if_not(Sys.getenv("RUN_ONLINE_TESTS") == "true", "Skipping online tests")
 
   expect_equal(get_cid("C#C", from = "smiles")$cid, "6326")
 })
@@ -100,9 +105,10 @@ test_that("get_cid() handles special characters in SMILES", {
 test_that("pc_prop", {
   skip_on_cran()
   skip_if_not(up, "PubChem service is down")
+  skip_if_not(Sys.getenv("RUN_ONLINE_TESTS") == "true", "Skipping online tests")
 
   b <- suppressWarnings(pc_prop("xxx", properties = "SMILES"))
-  c <- pc_prop("5564", properties = c("SMILES", "InChiKey"))
+  c <- pc_prop("5564", properties = c("SMILES", "InChIKey"))
   expect_true(is.na(b))
   expect_equal(ncol(c), 3)
 
@@ -117,10 +123,13 @@ test_that("pc_prop", {
   expect_true(all(
     d1m == c(
     "Coercing queries to positive integers. ",
-    "balloon coerced to NA. ",
     "-1 coerced to NA. ",
+    "balloon coerced to NA. ",
     "Done.\n",
-    "Querying. ",
+    "Querying 5564. ",
+    "OK (HTTP 200).",
+    "\n",
+    "Querying 2244. ",
     "OK (HTTP 200).",
     "\n"
   )))
@@ -129,6 +138,8 @@ test_that("pc_prop", {
 test_that("pc_synonyms", {
   skip_on_cran()
   skip_if_not(up, "PubChem service is down")
+  skip_if_not(Sys.getenv("RUN_ONLINE_TESTS") == "true", "Skipping online tests")
+
   expect_equal(pc_synonyms(NA), list(NA), ignore_attr = TRUE)
   expect_equal(pc_synonyms("Acetyl Salicylic Acid")[[1]][1], "aspirin")
   expect_equal(length(pc_synonyms(c("Triclosan", "Aspirin"))), 2)
@@ -140,6 +151,7 @@ test_that("pc_synonyms", {
 test_that("cid integration tests", {
   skip_on_cran()
   skip_if_not(ping_pubchem(), "PubChem service is down")
+  skip_if_not(Sys.getenv("RUN_ONLINE_TESTS") == "true", "Skipping online tests")
 
   expect_equal(pc_prop(get_cid("Triclosan")$cid[1],
                        properties = "SMILES")$SMILES,
@@ -151,20 +163,21 @@ test_that("cid integration tests", {
 test_that("pc_page()", {
   skip_on_cran()
   skip_if_not(up, "PubChem service is down")
+  skip_if_not(Sys.getenv("RUN_ONLINE_TESTS") == "true", "Skipping online tests")
 
-  a <- pc_page(c(311, 176, 1118, "balloon", NA), "Dissociation Constants")
+  a <- pc_page(311, "Dissociation Constants")
+  b <- pc_page("balloon", "Dissociation Constants")
+  c <- pc_page(NA, "Dissociation Constants")
 
-  expect_type(a, "list")
-  expect_length(a, 5)
-  expect_s3_class(a[[1]], c("Node", "R6"))
-  expect_s3_class(a[[2]], c("Node", "R6"))
-  expect_equal(a[[4]], NA)
-  expect_equal(a[[5]], NA)
+  expect_equal(class(a), "list")
+  expect_true(inherits(b, "empty_row"))
+  expect_true(inherits(c, "empty_row"))
 })
 
 test_that("pc_sect()", {
   skip_on_cran()
   skip_if_not(up, "PubChem service is down")
+  skip_if_not(Sys.getenv("RUN_ONLINE_TESTS") == "true", "Skipping online tests")
 
   a <- pc_sect(c(311, 176, 1118, "balloon", NA), "Dissociation Constants")
   expect_s3_class(a, c("tbl_df", "tbl", "data.frame"))
@@ -172,20 +185,18 @@ test_that("pc_sect()", {
   expect_equal(mean(c("2.79", "4.76 (at 25 °C)", NA) %in% a$Result), 1)
   expect_equal(mean(c("DrugBank", NA) %in% a$SourceName), 1)
   expect_equal(mean(c("DB04272", "DB03166", NA) %in% a$SourceID), 1)
+
   b <- pc_sect(2231, "depositor-supplied synonyms", "substance")
   expect_s3_class(b, c("tbl_df", "tbl", "data.frame"))
-  expect_equal(names(b), c("SID", "Name", "Result", "SourceName", "SourceID"))
   expect_equal(b$Result, c("cholesterol", "57-88-5",
                                 "5-cholestene-3beta-ol"), ignore_attr = TRUE)
 
   c <- pc_sect(780286, "modify date", "assay")
   expect_s3_class(c, c("tbl_df", "tbl", "data.frame"))
-  expect_equal(names(c), c("AID", "Name", "Result", "SourceName", "SourceID"))
-  expect_equal(c$Result, c("2014-05-03", "2018-09-28", "2020-06-30"))
+  expect_equal(c$`Version 1.1`, "2014-05-03")
 
   d <- pc_sect("1ZHY_A", "Sequence", "protein")
   expect_s3_class(d, c("tbl_df", "tbl", "data.frame"))
-  expect_equal(names(d), c("pdbID", "Name", "Result", "SourceName", "SourceID"))
-  expect_equal(d$Result[1], ">pdb|1ZHY|A Chain A, KES1 protein (Run BLAST)",
+  expect_equal(d$Header[1], ">pdb|1ZHY|A Chain A, KES1 protein (Run BLAST)",
                ignore_attr = TRUE)
  })

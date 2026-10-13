@@ -1,0 +1,151 @@
+# Skip on remote servers to avoid database downloads
+skip_on_cran()
+skip_on_ci()
+
+options(chembl_db_version = "37")
+
+if (Sys.getenv("RUN_ONLINE_TESTS") == "true") {
+  # Download ChEMBL database if not already downloaded
+  db_download_chembl(verbose = FALSE)
+}
+
+db_exists <- function() {
+  version <- chembl_check_db_version()
+  version <- validate_chembl_version(version)
+  tryCatch(
+    {
+      con <- connect_chembl(version = version)
+      on.exit(DBI::dbDisconnect(con))
+      TRUE
+    },
+    error = function(e) FALSE
+  )
+}
+
+test_that("chembl_offline_chembl_id_lookup works", {
+  skip_if_not(
+    db_exists(),
+    message = "Offline database not available"
+  )
+
+  a <- chembl_query_offline(
+    query = "CHEMBL1",
+    resource = "chembl_id_lookup",
+    output = "tidy"
+  )
+  b <- chembl_query_offline(
+    query = c("CHEMBL1", "CHEMBL1082"),
+    resource = "chembl_id_lookup",
+    output = "tidy"
+  )
+
+  expect_s3_class(a, "data.frame")
+  expect_equal(nrow(a), 1)
+  expect_equal(ncol(a), 5)
+  expect_s3_class(b, "data.frame")
+  expect_equal(nrow(b), 2)
+  expect_equal(ncol(b), 5)
+})
+
+test_that("informative error when query and resource do not match", {
+  skip_if_not(
+    db_exists(),
+    message = "Offline database not available"
+  )
+
+  msg <- tryCatch(
+    chembl_query_offline(
+      query = c("CHEMBL1082", "CHEMBL3988026") , resource = "molecule"),
+    error = function(e) e$message
+  )
+  expect_equal(msg, "CHEMBL3988026 is not a COMPOUND. It is a TISSUE.")
+})
+
+test_that("fully implemented resources work", {
+  skip_if_not(Sys.getenv("RUN_ONLINE_TESTS") == "true", "Skipping online tests")
+
+  skip_if_not(
+    db_exists(),
+    message = "Offline database not available"
+  )
+
+  full <- c(
+    "activity",
+    "atc_class",
+    "binding_site",
+    "biotherapeutic",
+    "cell_line",
+    "compound_record",
+    "drug_indication",
+    "drug_warning",
+    "go_slim"
+  )
+
+  for (i in full) {
+    queries <- chembl_example_query(i)
+    # single query
+    queries[1] |>
+      chembl_compare_service(resource = i) |>
+      suppressWarnings() |>
+      expect_true()
+    # multiple queries, if available
+    queries |>
+      chembl_compare_service(resource = i) |>
+      suppressWarnings() |>
+      expect_true()
+  }
+})
+
+test_that("partially implemented resources work", {
+  skip_if_not(Sys.getenv("RUN_ONLINE_TESTS") == "true", "Skipping online tests")
+
+  skip_if_not(
+    db_exists(),
+    message = "Offline database not available"
+  )
+
+  partial = c(
+    "document",
+    "drug",
+    "molecule"
+  )
+
+  for (i in partial) {
+    ids <- chembl_example_query(i)
+    ws <- chembl_query(ids, resource = i, mode = "ws") |> suppressWarnings()
+    off <- chembl_query(ids, resource = i, mode = "offline") |> suppressWarnings()
+    for (j in seq_along(ids)) {
+      # Remove fields not available in offline mode
+      if (i == "document") {
+        index <- which(names(ws[[j]]) %in% c("doi_chembl", "journal_full_title"))
+      } else if (i == "drug") {
+        index <- which(names(ws[[j]]) %in% c(
+          "applicants",
+          "black_box",
+          "drug_type",
+          "ob_patent",
+          "research_codes",
+          "rule_of_five",
+          "sc_patent",
+          "synonyms"
+        ))
+      } else if (i == "molecule") {
+        # cross_references could not be found in offline schema
+        # molecule_synonyms sorting is ambiguous on webservice
+        # molecule_structures$molfile has minimal diff
+        index <- which(names(ws[[j]])%in% c(
+          "cross_references",
+          "molecule_structures",
+          "molecule_synonyms"
+        ))
+        index_off <- which(names(off[[j]]) %in% c(
+          "molecule_structures",
+          "molecule_synonyms"
+        ))
+        off[[j]] <- off[[j]][-index_off]
+      }
+      ws[[j]] <- ws[[j]][-index]
+      expect_true(all.equal(ws[[j]], off[[j]]))
+    }
+  }
+})

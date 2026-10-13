@@ -1,32 +1,249 @@
-#' Query ChEMBL using ChEMBL IDs
+#' Download ChEMBL database
 #'
-#' Retrieve ChEMBL data using a vector of ChEMBL IDs.
-#' @param query character; a vector of ChEMBL IDs.
+#' Download a version of the ChEMBL database for offline access.
+#' @param version character, the database release version. See Details for more 
+#' information.
+#' @param verbose logical; should verbose messages be printed to the console?
+#' @return Downloads the requested database files.
+#' @details If \code{version = NULL} (default), the function calls 
+#' [chembl_check_db_version()] to look for a pinned version to download, or 
+#' stops with an error if it cannot find any. If \code{version = "latest"}, the 
+#' function downloads the newest  version currently published by ChEMBL.  If a 
+#' specific version is requested, the function downloads that version.
+#' @note If a checksum file is available for the requested version it will be
+#' used to check data integrity. To save storage space, webchem only retrieves
+#' those files that are used by the package. If you need other files as well,
+#' please download them manually.
+#' @references You can find more information about ChEMBL releases at
+#' \url{https://chembl.gitbook.io/chembl-interface-documentation/downloads}
+#' @examples
+#' \dontrun{
+#' db_download_chembl()
+#' db_download_chembl(version = "latest")
+#' db_download_chembl(version = "35")
+#' }
+#' @export
+db_download_chembl <- function(
+    version = NULL,
+    verbose = getOption("verbose")
+) {
+  if (is.null(version)) {
+    version <- try(chembl_check_db_version(), silent = TRUE)
+    if (inherits(version, "try-error")) {
+      stop("No default ChEMBL database version set. See ?db_download_chembl for more details.")
+    }
+  } else if (version == "latest") {
+    status <- chembl_status(verbose = verbose)
+    if (!is.list(status) && is.na(status)) {
+      stop("Service not available.")
+    }
+    version <- strsplit(status$chembl_db_version, "_")[[1]][2]
+  }
+  # input validation
+  if (!inherits(version, "chembl_version")) {
+    version <- validate_chembl_version(version = version)
+  }
+  stopifnot(is.logical(verbose), length(verbose) == 1)
+  # get paths
+  paths <- db_files("chembl", version = version)
+  paths$url_exists <- url_exists(paths$url)
+  if (!paths$url_exists[1]) {
+    warning("Checksum file not found. Data integrity will not be checked.")
+  }
+  if (any(!paths$url_exists[-1])) {
+    msg <- paste0(
+      "The following ChEMBL URLs were not found:\n",
+      paste(paths$url[which(!paths$url_exists)], collapse = "\n")
+    )
+    stop(msg)
+  }
+  dir_path <- file.path(
+    wc_cache$cache_path_get(),
+    "chembl",
+    paste0("chembl_", version$version_path)
+  ) |> path.expand()
+  checksum_file <- file.path(
+    dir_path,
+    paths$file[which(paths$type == "checksum")]
+  )
+  # download data
+  for (i in 1:nrow(paths)) {
+    if (verbose) {
+      msg <- paste0("Downloading ", paths$url[i], ". ")
+      message(msg, appendLF = FALSE)
+    }
+    if (!paths$url_exists[i]) {
+      if (verbose) message("URL not found.")
+      next()
+    }
+    download_path <- file.path(dir_path, basename(paths$url[i]))
+    if (file.exists(download_path)) {
+      if (verbose) message("Already downloaded.")
+      next()
+    }
+    # make db dir if not already present
+    if (!dir.exists(dir_path)) dir.create(dir_path, recursive = TRUE)
+    # download data
+    curl::curl_download(paths$url[i], download_path, quiet = TRUE)
+    if (verbose) message("Done.")
+    # check data integrity
+    if (file.exists(checksum_file) && paths$type[i] != "checksum") {
+      if (verbose) message("  Checking data integrity. ", appendLF = FALSE)
+      df <- read.table(checksum_file, skip = 2)
+      names(df) <- c("checksum", "file")
+      if (nchar(df$checksum[1]) != 64) {
+        names(df) <- c("file", "checksum")
+      }
+      sha256sum <- digest::digest(file = download_path, algo = "sha256")
+      check <- df$checksum[which(df$file == basename(paths$url[i]))]
+      if (sha256sum != check) {
+        msg <- paste0("Checksum error, data may be corrupted: ", basename(paths$url[i]))
+        stop(msg)
+      }
+      if (verbose) message("Done.")
+    }
+    # post processing
+    if (paths$type[i] == "sqlite") {
+      final_file <- file.path(dir_path, paths$file[i])
+      if (file.exists(final_file)) next()
+      if (verbose) message("  Unzipping SQLite database. ", appendLF = FALSE)
+      utils::untar(download_path, exdir = dir_path)
+      if (verbose) message("Done.")
+      if (verbose) message(
+        "  Checking SQLite database final location. ", appendLF = FALSE)
+      if (!file.exists(final_file)) {
+        warning("Unexpected archive contents. Please raise an issue at https://github.com/ropensci/webchem.")
+        next()
+      }
+      if (verbose) message("Done.")
+    }
+  }
+}
+
+#' Retrieve FTP URL for ChEMBL database files
+#'
+#' @param version character; release version
+#' @return FTP URL for ChEMBL databas files
+#' @examples {
+#' chembl_dir_url(version = "34")
+#' chembl_dir_url(version = "24.1")
+#' }
+#' @noRd
+chembl_dir_url <- function(version) {
+  if (!inherits(version, "chembl_version")) {
+    version <- validate_chembl_version(version = version)
+  }
+  if (version$version_path %in% c("22", "24")) {
+    url <- paste0(
+      "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/releases/chembl_",
+      version$version_path, "/archived"
+    )
+  } else {
+    url <- paste0(
+      "https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/releases/chembl_",
+      version$version_path
+    )
+  }
+  if (url_exists(url)) {
+    return(url)
+  } else {
+    msg <- paste0("ChEMBL URL not found: ", url)
+    stop(msg)
+  }
+}
+
+#' Retrieve paths for ChEMBL database files
+#'
+#' @param version character; version of the database.
+#' @return a data frame with three columns "url", "file" and "type". "url" is
+#' the download URL. "file" is the final path to the file within the download
+#' directory of the requested database version. "type" is the file type which
+#' guides further processing.
+#' @examples
+#' \dontrun{
+#' chembl_files(version = "35")
+#' }
+#' @noRd
+chembl_files <- function(version) {
+  if (!inherits(version, "chembl_version")) {
+    version <- validate_chembl_version(version = version)
+  }
+  dir_url <- chembl_dir_url(version = version)
+  # set default paths
+  path_list <- list(
+    checksum = data.frame(
+      url = file.path(dir_url, "checksums.txt"),
+      file = "checksums.txt"
+    ),
+    sqlite = data.frame(
+      url = file.path(
+        dir_url, paste0("chembl_", version$version_path, "_sqlite.tar.gz")),
+      file = file.path(
+        paste0("chembl_", version$version_path),
+        paste0("chembl_", version$version_path, "_sqlite"),
+        paste0("chembl_", version$version_path, ".db")
+      )
+    )
+  )
+  # override defaults paths
+  if (as.numeric(version$version_base) <= 22) {
+    path_list$sqlite$file <-  file.path(
+      paste0("chembl_", version$version_path, "_sqlite"),
+      paste0("chembl_", version$version_base, ".db")
+    )
+  } else if (version$version == "24.1") {
+    path_list$sqlite$file <-  file.path(
+      paste0("chembl_", version$version_base),
+      paste0("chembl_", version$version_base, "_sqlite"),
+      paste0("chembl_", version$version_base, ".db")
+    )
+  }
+  out <- do.call(rbind, Map(cbind, path_list, type = names(path_list)))
+  rownames(out) <- NULL
+  out <- out |> dplyr::relocate("type", "file", "url")
+  return(out)
+}
+
+#' Query ChEMBL
+#'
+#' Retrieve ChEMBL data using a vector of IDs.
+#' @param query character; a vector of IDs. The type of ID depends on the
+#' resource. See examples for more information.
 #' @param resource character; the ChEMBL resource to query. Use
 #' [chembl_resources()] to see all available resources.
-#' @param cache_file character; the name of the cache file without the file
-#' extension. If \code{NULL}, results are not cached.
-#' @param verbose logical; should a verbose output be printed on the console?
-#' @param test_service_down logical; this argument is only used for testing.
-#' @return The function returns a list of lists, where each element of the list
-#' contains a list of respective query results. Results are simplified, if
+#' @param mode character; either "ws" (default) to use the webservice or
+#' "offline" to use a local ChEMBL database. Note, to use the "offline" mode,
+#' you need to have a local ChEMBL database. See [db_download_chembl()].
+#' @param output character; either "raw" (default) to return the raw results
+#' which is a list of lists, or "tidy" to return simplified results, if
 #' possible.
+#' @param cache_file character or NULL; name of the cache file (without extension)
+#'   used when mode = "ws". If NULL (default), results are not cached.
+#' @param similarity numeric; similarity threshold for similarity searches
+#'   (default 70).
+#' @param version character; database version to use in "offline" mode. If
+#' `NULL` (default), [chembl_check_db_version()] resolves a default set via
+#' .Renviron or .Rprofile. Ignored when `mode = "ws"`.
+#' @param verbose logical; should a verbose output be printed on the console?
+#' @param ... additional arguments, only used for internal testing.
+#' @return The function returns a list of lists, where each element of the list
+#' contains a list of respective query results. If `tidy = TRUE` results are
+#' simplified, if possible.
 #' @details Each entry in ChEMBL has a unique ID. Data in ChEMBL is organized in
 #' databases called resources. An entry may or may not have a record in a
 #' particular resource. An entry may have a record in more than one resource,
 #' e.g. a compound may be present in both the "molecule" and the "drug"
-#' resource. This function queries a vector of ChEMBL IDs from a specific ChEMBL
+#' resource. This function queries a vector of IDs from a specific ChEMBL
 #' resource.
 #' @details If you are unsure which ChEMBL resource contains your ChEMBL ID,
 #' use this function with the \code{"chembl_id_lookup"} resource to find the
 #' appropriate resource for a ChEMBL ID. Note that \code{"chembl_id_lookup"} is
 #' not a separate function but a resource used by \code{chembl_query}.
-#' @details If \code{cache_file} is not \code{NULL} the function creates a
-#' cache directory in the working directory and a cache file in the cache
-#' directory. This file is used in subsequent calls of the function. The
-#' function first tries to retrieve query results from the cache file and only
-#' accesses the webservice if the ChEMBL ID cannot be found in the cache file.
-#' The cache file is extended as new ChEMBL ID-s are queried during the session.
+#' @details If \code{mode = "ws"} and \code{cache_file} is not `NULL`
+#' the function creates a cache directory in the working directory and a cache
+#' file in the cache directory. This file is used in subsequent calls of the
+#' function. The cache file is extended as new ID-s are queried during the
+#' session.
 #' @note
 #' Links to the webservice documentation:
 #' \itemize{
@@ -41,37 +258,189 @@
 #' \dontrun{
 #' # Might fail if API is not available
 #'
-#' # Search molecules
+#' # Examples with resources that operate on compounds
+#'
+#' # Resource: biotherapeutic - requires compound ChEMBL ID
+#' chembl_query("CHEMBL448105", resource = "biotherapeutic")
+#'
+#' # Resource: compound_structural_alert - requires compound ChEMBL ID
+#' chembl_query(
+#'   "CHEMBL266429",
+#'   resource = "compound_structural_alert"
+#' )
+#'
+#' # Resource: compound_record - requires compound record ID
+#' chembl_query("1", resource = "compound_record")
+#'
+#' # Resource: drug - requires compound ChEMBL ID
+#' chembl_query("CHEMBL2", resource = "drug")
+#'
+#' # Resource: molecule - requires compound ChEMBL ID
 #' chembl_query("CHEMBL1082", resource = "molecule")
 #' chembl_query(c("CHEMBL25", "CHEMBL1082"), resource = "molecule")
 #'
-#' # Look up ChEMBL IDs in ChEMBL "resources", returns one resource per query.
-#' chembl_query("CHEMBL771355", "chembl_id_lookup")
+#' # Resource: molecule_form - requires compound ChEMBL ID
+#' chembl_query("CHEMBL6329", resource = "molecule_form")
 #'
-#' # Search assays
-#' chembl_query("CHEMBL771355", resource = "assay")
+#' # Resource: similarity - requires compound SMILES
+#' # By default, the function will use 70 as similarity threshold
+#' chembl_query(
+#'   "CC(=O)Oc1ccccc1C(=O)O", resource = "similarity",
+#'   similarity = 70
+#' )
+#'
+#' # Resource: substructure - requires compound SMILES
+#' chembl_query("CN(CCCN)c1cccc2ccccc12", resource = "substructure")
+#'
+#' # Other Examples
+#'
+#' # Resource: "activity" - requires activity ID
+#' chembl_query("31863", resource = "activity")
+#'
+#' # Resource: "assay" - requires assay ChEMBL ID
+#' chembl_query("CHEMBL615117", resource = "assay")
+#'
+#' # Resource: "atc_class" - requires ATC class ID
+#' chembl_query("A01AA01", resource = "atc_class")
+#'
+#' # Resource: binding_site - requires site ID
+#' chembl_query(2, resource = "binding_site")
+#'
+#' # Resource: cell_line - requires ChEMBL ID
+#' chembl_query("CHEMBL3307241", resource = "cell_line")
+#'
+#' # Resource: chembl_id_lookup - requires ChEMBL ID
+#' chembl_query("CHEMBL1", resource = "chembl_id_lookup")
+#'
+#' # Resource: document - requires document ChEMBL ID
+#' chembl_query("CHEMBL1158643", resource = "document")
+#'
+#' # Resource: document_similarity - requires document 1 ChEMBL ID
+#' chembl_query("CHEMBL1148466", resource = "document_similarity")
+#'
+#' # Resource: drug_indication - requires drug indication ID
+#' chembl_query("22606", resource = "drug_indication")
+#'
+#' # Resource: drug_warning - requires warning ID
+#' chembl_query("1", resource = "drug_warning")
+#'
+#' # Resource: go_slim - requires GO ID
+#' chembl_query("GO:0000003", resource = "go_slim")
+#'
+#' # Resource: mechanism - requires mechanism ID
+#' chembl_query("13", resource = "mechanism")
+#'
+#' # Resource: metabolism - requires metabolism ID
+#' chembl_query("119", resource = "metabolism")
+#'
+#' # Resource: organism - requires organism class ID (not taxid)
+#' chembl_query("1", resource = "organism")
+#'
+#' # Resource: protein_classification - requires protein class ID
+#' chembl_query("1", resource = "protein_classification")
+#'
+#' # Resource: source - requires source ID
+#' chembl_query("1", resource = "source")
+#'
+#' # Resource: target - requires target ChEMBL ID
+#' chembl_query("CHEMBL2074", resource = "target")
+#'
+#' # Resource: target_component - requires target component ID
+#' chembl_query("1", resource = "target_component")
+#'
+#' # Resource: target_relation - requires target ChEMBL ID
+#' chembl_query("CHEMBL2251", resource = "target_relation")
+#'
+#' # Resource: tissue - requires tissue ChEMBL ID
+#' chembl_query("CHEMBL3988026", resource = "tissue")
+#'
+#' # Resource: xref_source - requires the name of the resource
+#' chembl_query("AlphaFoldDB", resource = "xref_source")
 #' }
-#' @importFrom httr RETRY message_for_status content
+
 #' @export
-chembl_query <- function(query,
-                         resource = "molecule",
-                         cache_file = NULL,
-                         verbose = getOption("verbose"),
-                         test_service_down = FALSE) {
+chembl_query <- function(
+  query,
+  resource = "molecule",
+  mode = "ws",
+  output = "raw",
+  cache_file = NULL,
+  similarity = 70,
+  version = NULL,
+  verbose = getOption("verbose"),
+  ...) {
   resource <- match.arg(resource, chembl_resources())
+  output <- match.arg(output, choices = c("raw", "tidy"))
+  if (resource == "image") {
+    stop("To download images, please use chembl_img().")
+  }
+  if (resource == "status") {
+    stop("To retrieve webservise status, please use chembl_status().")
+  }
+  mode <- match.arg(mode, choices = c("ws", "offline"))
+  if (mode == "ws") {
+    chembl_query_ws(
+      query = query,
+      resource = resource,
+      verbose = verbose,
+      cache_file = cache_file,
+      similarity = similarity,
+      output = output,
+      ...
+    )
+  } else {
+    chembl_query_offline(
+      query = query,
+      resource = resource,
+      verbose = verbose,
+      similarity = similarity,
+      version = version,
+      output = output
+    )
+  }
+}
+
+#' Query ChEMBL using the webservice
+#' @importFrom httr RETRY message_for_status content
+#' @examples
+#' \dontrun{
+#' chembl_query_ws(query = "CHEMBL1082", resource = "molecule")
+#' }
+#' @noRd
+chembl_query_ws <- function(
+  query,
+  resource = "molecule",
+  verbose = getOption("verbose"),
+  cache_file = NULL,
+  similarity = 70,
+  output = "raw",
+  ...) {
+  if (resource == "atc_class") {
+    warning("The 'atc_class' resource currently returns no more than 20 results.")
+  }
+  if (resource == "similarity") {
+    warning("Similarity search currently returns no more than 20 results.")
+  }
   stem <- "https://www.ebi.ac.uk/chembl/api/data"
-  foo <- function(query, verbose) {
+  opts <- list(...)
+  foo <- function(query, verbose, similarity) {
     if (is.na(query)) {
       if (verbose) webchem_message("na")
       return(NA)
     }
-    if (grepl("^CHEMBL[0-9]+", query) == FALSE) {
-      if (verbose) message("Query is not a ChEMBL ID. Returning NA.")
-      return(NA)
-    }
+    query <- chembl_validate_query(query, resource, verbose)
+    if (is.na(query)) return(NA)
     if (verbose) webchem_message("query", query, appendLF = FALSE)
-    url <- ifelse(
-      test_service_down, "", paste0(stem, "/", resource, "/", query, ".json"))
+    if (isTRUE(opts$test_service_down)) {
+      url <- ""
+    } else if (resource == "similarity") {
+      url <- paste0(stem, "/", resource, "/", query, "/", similarity, ".json")
+    } else if (resource == "compound_structural_alert") {
+      url <- paste0(stem, "/", resource, ".json?molecule_chembl_id=", query)
+    } else {
+      url <- paste0(stem, "/", resource, "/", query, ".json")
+    }
+
     webchem_sleep(type = "API")
     res <- try(httr::RETRY("GET",
                            url,
@@ -88,11 +457,37 @@ chembl_query <- function(query,
     }
     if (verbose) message(httr::message_for_status(res))
     cont <- httr::content(res, type = "application/json")
-    cont <- format_chembl(cont)
+    
+    # If there are multiple results, the results will be paginated.
+    # If the results are paginated, the data will be in the "atc" field.
+    # The "atc" field is not part of the schema.
+    if (resource == "atc_class") {
+      if ("atc" %in% names(cont)) {
+        cont <- cont$atc
+      } else {
+        cont <- list(cont)
+      }
+      cont <- lapply(cont, function(entry) {
+        force_schema(entry, resource)
+      })
+    } else {
+      cont <- force_schema(cont, resource)
+    }
+
+    # harmonise ordering between webservice and offline results
+    if (resource == "molecule") {
+      cont$molecule_synonyms <- cont$molecule_synonyms[order(sapply(cont$molecule_synonyms, function(x) x$molecule_synonym))]
+    }
+    
+    if (output == "tidy") {
+      cont <- format_chembl(cont)
+    }
     return(cont)
   }
   if (is.null(cache_file)) {
-    out <- lapply(query, function(x) foo(x, verbose = verbose))
+    out <- lapply(query, function(x) {
+      foo(x, verbose = verbose, similarity = similarity)
+    })
   } else {
     if (!dir.exists("cache")) dir.create("cache")
     cfpath <- paste0("cache/", cache_file, ".rds")
@@ -107,7 +502,7 @@ chembl_query <- function(query,
         if (verbose) message("Already retrieved.")
         return(query_results[[x]])
       } else {
-        new <- foo(x, verbose = verbose)
+        new <- foo(x, verbose = verbose, similarity = similarity)
         if (!is.na(x)) {
           query_results[[x]] <<- new
           saveRDS(query_results, file = cfpath)
@@ -116,7 +511,164 @@ chembl_query <- function(query,
         }
       })
   }
+  names(out) <- query
+  class(out) <- c(
+    ifelse(
+      output == "raw",
+      paste0("chembl_", resource, "_raw"),
+      paste0("chembl_", resource, "_tidy")
+    ),
+    class(out)
+  )
   return(out)
+}
+
+#' Download images from ChEMBL
+#'
+#' Retrieve images of substances from ChEMBL and save them in SVG format.
+#' @param query character; a vector of ChEMBL IDs.
+#' @param dir character; the directory in which to save the image(s). If the
+#' directory does not exist, it will be created. If `NULL` (default), the
+#' working directory will be used.
+#' @param verbose logical; should verbose messages be printed to the console?
+#' @param ... additional arguments, only used for internal testing.
+#' @return Creates the download directory if needed and downloads one or more
+#' SVG files.
+#' @examples
+#' \dontrun{
+#' # download a single image
+#' chembl_img("CHEMBL1")
+#' # download a single image to another directory
+#' chembl_img("CHEMBL1", dir = tempdir())
+#' # download multiple images
+#' chembl_img(c("CHEMBL1", "CHEMBL2"))
+#' }
+#' @export
+chembl_img <- function(
+  query,
+  dir = NULL,
+  verbose = getOption("verbose"),
+  ...
+  ) {
+  stem <- "https://www.ebi.ac.uk/chembl/api/data"
+  opts <- list(...)
+  foo <- function(query, verbose) {
+    if (verbose) webchem_message("query", query, appendLF = FALSE)
+    query <- chembl_validate_query(query, "image", verbose)
+    if (is.na(query)) return(NA)
+    webchem_sleep(type = "API")
+    url <- ifelse(
+      isTRUE(opts$test_service_down),
+      "",
+      paste0(stem, "/image/", query)
+    )
+    if (is.null(dir)) {
+      path <- paste0(query, ".svg")
+    } else {
+      if(!dir.exists(dir)) dir.create(dir, recursive = TRUE)
+      path <- paste0(dir, "/", query, ".svg")
+    }
+    if (file.exists(path)) {
+      if (verbose) message("Already downloaded.")
+      return()
+    }
+    res <- try(httr::RETRY("GET",
+                           url,
+                           httr::user_agent(webchem_url()),
+                           terminate_on = 404,
+                           httr::write_disk(path, overwrite = TRUE),
+                           quiet = TRUE), silent = TRUE)
+    if (inherits(res, "try-error")) {
+      if (verbose) webchem_message("service_down")
+      return(NA)
+    }
+    if (res$status_code != 200) {
+      if (verbose) message(httr::message_for_status(res))
+      return(NA)
+    }
+    if (verbose) message(httr::message_for_status(res))
+    return(NA)
+  }
+  out <- lapply(query, function(x) foo(x, verbose = verbose))
+}
+
+#' Retrieve ChEMBL webservice status
+#'
+#' Retrieve status information about the ChEMBL webservice: database version,
+#' release date, status, and count data for various entities.
+#' @param verbose logical; should verbose messages be printed to the console?
+#' @param ... additional arguments, only used for internal testing.
+#' @export
+chembl_status <- function(verbose = getOption("verbose"), ...) {
+  opts <- list(...)
+  url <- ifelse(
+    isTRUE(opts$test_service_down),
+    "",
+    "https://www.ebi.ac.uk/chembl/api/data/status"
+  )
+  webchem_sleep(type = "API")
+  if (verbose) message("Querying ChEMBL status. ", appendLF = FALSE)
+  res <- try(httr::RETRY("GET",
+                         url,
+                         httr::user_agent(webchem_url()),
+                         httr::add_headers(Accept = "application/json"),
+                         terminate_on = 404,
+                         quiet = TRUE), silent = TRUE)
+  if (inherits(res, "try-error")) {
+    if (verbose) webchem_message("service_down")
+    return(NA)
+  }
+  if (verbose) message(httr::message_for_status(res))
+  if (res$status_code != 200) {
+    return(NA)
+  } else {
+    return(httr::content(res, type = "application/json"))
+  }
+}
+
+chembl_validate_query <- function(query, resource, verbose) {
+  resource <- match.arg(resource, chembl_resources())
+  if (is.na(query)) {
+    if (verbose) webchem_message("na")
+    return(NA)
+  }
+  if (resource %in% c(
+    "activity",
+    "binding_site",
+    "compound_record",
+    "drug_indication",
+    "drug_warning",
+    "mechanism",
+    "metabolism",
+    "organism",
+    "protein_classification",
+    "source"
+  )) {
+    query_numeric <- suppressWarnings(as.numeric(query))
+    if (is.na(query_numeric)) {
+      if (verbose) message("Query must be coercible to numeric. Returning NA.")
+      return(NA)
+    }
+  } else if (resource %in% c(
+    "assay",
+    "biotherapeutic",
+    "chembl_id_lookup",
+    "compound_structural_alert",
+    "document",
+    "document_similarity",
+    "drug",
+    "image",
+    "molecule",
+    "molecule_form",
+    "target",
+    "tissue"
+  )) {
+    if (!grepl("^CHEMBL[0-9]+", query)) {
+      if (verbose) message("Query must be a ChEMBL ID. Returning NA.")
+      return(NA)
+    }
+  }
+  return(query)
 }
 
 #' Retrieve all ATC classes
@@ -124,7 +676,7 @@ chembl_query <- function(query,
 #' Retrieve all available classes within the Anatomical Therapeutic Chemical
 #' (ATC) classification system.
 #' @param verbose logical; should a verbose output be printed on the console?
-#' @param test_service_down logical; this argument is only used for testing.
+#' @param ... additional arguments, only used for internal testing.
 #' @references Gaulton, A., Bellis, L. J., Bento, A. P., Chambers, J.,
 #' Davies, M., Hersey, A., ... & Overington, J. P. (2012). ChEMBL: a large-scale
 #' bioactivity database for drug discovery. Nucleic acids research, 40(D1),
@@ -139,15 +691,18 @@ chembl_query <- function(query,
 #' @importFrom tibble tibble as_tibble
 #' @importFrom dplyr bind_rows
 #' @export
-chembl_atc_classes <- function(verbose = getOption("verbose"),
-                               test_service_down = FALSE) {
+chembl_atc_classes <- function(verbose = getOption("verbose"), ...) {
   i = 0
   next_page <- "/chembl/api/data/atc_class.json?limit=1000&offset=0"
   atc_classes <- tibble::tibble()
+  opts <- list(...)
   while (!is.null(next_page)) {
     i = i + 1
     url <- ifelse(
-      test_service_down, "", paste0("https://www.ebi.ac.uk", next_page))
+      isTRUE(opts$test_service_down),
+      "",
+      paste0("https://www.ebi.ac.uk", next_page)
+    )
     webchem_sleep(type = "API")
     if (verbose) webchem_message("query", paste0("Page ", i), appendLF = FALSE)
     res <- try(httr::RETRY("GET",
@@ -190,16 +745,49 @@ chembl_atc_classes <- function(verbose = getOption("verbose"),
 #' @export
 chembl_resources <- function() {
   resources <- c(
-    "activity", "activity_supplementary_data_by_activity", "assay",
-    "assay_class", "atc_class", "binding_site", "biotherapeutic", "cell_line",
+    "activity", "assay", "atc_class", "binding_site", "biotherapeutic", "cell_line",
     "chembl_id_lookup", "compound_record", "compound_structural_alert",
     "document", "document_similarity", "drug", "drug_indication",
     "drug_warning", "go_slim", "image", "mechanism",  "metabolism",
-    "molecule", "molecule_form", "organism", "protein_class", "similarity",
+    "molecule", "molecule_form", "organism", "protein_classification", "similarity",
     "source", "status", "substructure", "target", "target_component",
     "target_relation", "tissue", "xref_source"
   )
   return(resources)
+}
+
+#' Connect local ChEMBL database
+#'
+#' @importFrom rlang .data
+#' @param version character; version of the database. If `NULL` (default),
+#' [chembl_check_db_version()] resolves a default set via .Renviron or
+#' .Rprofile.
+#' @param ... Further args passed on to [DBI::dbConnect()]
+#' @return an object of class "SQLiteConnection".
+#' @examples
+#' \dontrun{
+#'   con <- connect_chembl(version = "37")
+#' }
+#' @noRd
+connect_chembl <- function(version = NULL, ...) {
+  if (is.null(version)) version <- chembl_check_db_version()
+  if (!inherits(version, "chembl_version")) {
+    version <- validate_chembl_version(version = version)
+  }
+  dir_path <- file.path(
+    wc_cache$cache_path_get(),
+    "chembl",
+    paste0("chembl_", version$version_path)
+  ) |> path.expand()
+  file_path <- chembl_files(version = version) |>
+    dplyr::filter(.data$type == "sqlite") |>
+    dplyr::pull(file)
+  full_path <- file.path(dir_path, file_path)
+  if (!file.exists(full_path)) {
+    stop("Database not found. Use db_download_chembl() to download the database.")
+  }
+  con <- DBI::dbConnect(RSQLite::SQLite(), dbname = full_path, ...)
+  return(con)
 }
 
 #' Format ChEMBL results
@@ -208,23 +796,368 @@ chembl_resources <- function() {
 #' @param cont list; json output from \code{chembl_query()}
 #' @noRd
 format_chembl <- function(cont) {
-  if ("atc_classifications" %in% names(cont)) {
-    cont$atc_classifications <- unlist(cont$atc_classifications)
+  # Names of elements to convert to data frames (using dplyr::bind_cols)
+  df_names <- c(
+    "action_type",
+    "activity_properties",
+    "assay_classifications",
+    "assay_parameters",
+    "atc_classification",
+    "biotherapeutic",
+    "biocomponents",
+    "chembl_release",
+    "compound_structural_alerts",
+    "cross_references",
+    "go_slims",
+    "indication_refs",
+    "ligand_efficiency",
+    "mechanism_refs",
+    "metabolism_refs",
+    "molecule_forms",
+    "molecule_hierarchy",
+    "molecule_properties",
+    "molecule_structures",
+    "molecule_synonyms",
+    "page_meta",
+    "protein_classifications",
+    "site_components",
+    "target_component_synonyms",
+    "target_component_xrefs",
+    "targets",
+    "variant_sequence",
+    "warning_refs"
+  )
+  flat_names <- c(
+    "applicants",
+    "atc_classifications",
+    "research_codes",
+    "synonyms"
+  )
+
+  # Helper to flatten a single entity
+  flatten_entity <- function(entity) {
+    for (nm in df_names) {
+      # e.g. activity is sometimes a list sometimes a character string
+      # only flatten if it is a list to prevent error.
+      if (nm %in% names(entity)) {
+        if (inherits(entity[[nm]], "list")) {
+          entity[[nm]] <- dplyr::bind_rows(entity[[nm]])
+        }
+      }
+    }
+    for (nm in flat_names) {
+      if (nm %in% names(entity)) {
+        entity[[nm]] <- unlist(entity[[nm]])
+      }
+    }
+    entity
   }
-  if ("cross_references" %in% names(cont)) {
-    cont$cross_references <- dplyr::bind_rows(cont$cross_references)
+
+  # If 'molecule' is present and is a list, flatten its children
+  if ("molecules" %in% names(cont)) {
+    for (i in 1:length(cont[["molecules"]])) {
+      cont[["molecules"]][[i]] <- flatten_entity(cont[["molecules"]][[i]])
+    }
   }
-  if ("molecule_hierarchy" %in% names(cont)) {
-    cont$molecule_hierarchy <- dplyr::bind_rows(cont$molecule_hierarchy)
+
+  if ("target_components" %in% names(cont)) {
+    for (i in 1:length(cont[["target_components"]])) {
+      cont[["target_components"]][[i]] <- flatten_entity(cont[["target_components"]][[i]])
+    }
   }
-  if ("molecule_properties" %in% names(cont)) {
-    cont$molecule_properties <- dplyr::bind_rows(cont$molecule_properties)
-  }
-  if ("molecule_structures" %in% names(cont)) {
-    cont$molecule_structures <- dplyr::bind_rows(cont$molecule_structures)
-  }
-  if ("molecule_synonyms" %in% names(cont)) {
-    cont$molecule_synonyms <- dplyr::bind_rows(cont$molecule_synonyms)
-  }
+
+  # Also flatten top-level if needed
+  cont <- flatten_entity(cont)
+
+  # map NULL to NA in R
+  cont <- lapply(cont, function(x) {
+    if (is.null(x)) {
+      return(NA_character_)
+    } else {
+      return(x)
+    }
+  })
+
   return(cont)
+}
+
+#' Validate ChEMBL version
+#'
+#' @description Validates the provided ChEMBL version.
+#' @param version character; the ChEMBL version to validate.
+#' @return Validated version number as a string.
+#' @noRd
+validate_chembl_version <- function(version) {
+  assert(version, "character")
+  stopifnot(length(version) == 1)
+  version_num <- suppressWarnings(as.numeric(version))
+  version_base <- as.character(floor(version_num))
+  if (is.na(version_num)) {
+    stop("Version must be coercible to numeric.")
+  }
+  if (version_num < 20) {
+    stop("Version not supported. Try a more recent version.")
+  }
+  if (version_num %% 1 != 0) {
+    version_path <- gsub("\\.", "_", version)
+  } else {
+    version_path <- version
+  }
+  out <- list(
+    version = version,
+    version_path = version_path,
+    version_base = version_base
+  )
+  class(out) <- c("chembl_version", class(version))
+  return(out)
+}
+
+chembl_example_query <- function(resource) {
+  resource <- match.arg(resource, chembl_resources())
+  resource <- resource[!resource %in% c("image", "status")]
+  example_queries <- list(
+    activity = c("31863", "32190", "624419", "31910", "31864", "3269724", "17805339"),
+    assay = c("CHEMBL615117", "CHEMBL1061852", "CHEMBL5445082", "CHEMBL5441382", "CHEMBL2184458"),
+    atc_class = c("A01AA01", "A01AA"),
+    binding_site = "2",
+    biotherapeutic = c("CHEMBL8234", "CHEMBL448105", "CHEMBL441738"),
+    cell_line = c("CHEMBL3307241", "CHEMBL3307242"),
+    chembl_id_lookup = "CHEMBL1",
+    compound_record = "1",
+    compound_structural_alert = "CHEMBL266429",
+    document = c("CHEMBL1158643", "CHEMBL1132398", "CHEMBL5303573", "CHEMBL3639173"),
+    document_similarity = "CHEMBL1148466",
+    drug = "CHEMBL2",
+    drug_indication = "22606",
+    drug_warning = "1",
+    go_slim = "GO:0000003",
+    image = "CHEMBL1",
+    mechanism = "13",
+    metabolism = c("119", "623", "180"),
+    molecule = c("CHEMBL1082", "CHEMBL8234"),
+    molecule_form = "CHEMBL6329",
+    organism = "1",
+    protein_classification = "1",
+    similarity = "CC(=O)Oc1ccccc1C(=O)O",
+    source = c("1", "5"),
+    substructure = "CN(CCCN)c1cccc2ccccc12",
+    target = "CHEMBL2074",
+    target_component = "1",
+    target_relation = "CHEMBL2251",
+    tissue = "CHEMBL3988026",
+    xref_source = "AlphaFoldDB"
+  )
+  if (!resource %in% names(example_queries)) {
+    stop(paste0("No example query available for this resource: ", resource))
+  }
+  example_queries[[resource]]
+}
+
+#' Force ChEMBL webservice response to conform to schema
+#'
+#' Enforces schema-based type coercion and replaces missing values (NULL, empty
+#' lists, "NA" strings) with appropriately typed NA values. This ensures
+#' consistency between webservice and offline query results.
+#' @param res list; the ChEMBL webservice response to process.
+#' @param resource character; the ChEMBL resource.
+#' @param schema list; the schema for the ChEMBL resource.
+#' @noRd
+force_schema <- function(res, resource) {
+  resource <- match.arg(resource, chembl_resources())
+  if (resource == "compound_structural_alert") {
+    warning(
+      "The 'compound_structural_alert' schema appears inconsistent with the ",
+      "webservice response. Schema enforcement skipped; returning result as-is."
+    )
+    return(res)
+  }
+  # get schema
+  schema <- get_chembl_ws_schema(resource)
+  # map schema types to R types
+  map_type <- function(schema_type) {
+    if (schema_type == "boolean") return("logical")
+    if (schema_type %in% c(
+      "integer", "float", "decimal", "number"
+    )) return("numeric")
+    if (schema_type %in% c(
+      "string", "date", "datetime"
+    )) return("character")
+    stop(paste0("Unknown schema_type: '", schema_type, "'."))
+  }
+  # return a typed NA for a given R type
+  typed_na <- function(r_type) {
+    switch(
+      r_type,
+      "character" = NA_character_,
+      "numeric"   = NA_real_,
+      "logical"   = NA,
+      NA_character_
+    )
+  }
+  # coerce an atomic value to the appropriate R type;
+  coerce_to_type <- function(value, r_type, field_name) {
+    if (is.null(value) || (is.atomic(value) && length(value) == 1 && is.na(value))) {
+      return(typed_na(r_type))
+    }
+    # Schema declares a scalar type but webservice returned a list:
+    # unlist if all elements are atomic (e.g. a list of strings), otherwise error.
+    if (is.list(value)) {
+      if (all(vapply(value, is.atomic, logical(1)))) {
+        value <- unlist(value)
+      } else {
+        stop(paste0(
+          "Field '", field_name, "' has schema type '", r_type,
+          "' but received a list containing non-atomic elements. ",
+          "Cannot coerce to scalar type."
+        ))
+      }
+    }
+    if (!is.atomic(value)) {
+      stop(paste0("Unsupported value type: ", field_name, "; ", class(value)))
+    }
+    switch(
+      r_type,
+      "character" = as.character(value),
+      "numeric"   = as.numeric(value),
+      "logical"   = as.logical(value),
+      value
+    )
+  }
+  # build a schema-conforming named list of typed NAs for a set of sub-fields;
+  # always returns a plain named list — wrapping in list() for to_many is the
+  # caller's responsibility
+  make_na_record <- function(fields) {
+    lapply(fields, function(sf) {
+      if (!exists("type", sf)) stop("Schema field is missing 'type' information.")
+      if (sf$type == "related") {
+        if (!exists("related_type", sf)) {
+          stop("Schema for related field is missing 'related_type' information.")
+        }
+        if (!exists("schema", sf) || !exists("fields", sf$schema)) {
+          stop("Schema for related field is missing 'schema$fields' information.")
+        }
+        inner <- make_na_record(sf$schema$fields)
+        if (sf$related_type == "to_one") inner else list(inner)
+      } else {
+        typed_na(map_type(sf$type))
+      }
+    })
+  }
+  # recursively coerce a value according to its field schema entry;
+  # handles to_one (named list) and to_many (list of named lists) at any depth
+  coerce_by_schema <- function(x, field_name, field_schema) {
+    if (!exists("type", field_schema)) {
+      stop("Schema field is missing 'type' information.")
+    }
+    if (field_schema$type != "related") {
+      return(coerce_to_type(x, map_type(field_schema$type), field_name))
+    }
+    # field is a nested structure
+    if (!exists("related_type", field_schema)) {
+      stop("Schema for related field is missing 'related_type' information.")
+    }
+    if (!exists("schema", field_schema) || !exists("fields", field_schema$schema)) {
+      stop("Schema for related field is missing 'schema$fields' information.")
+    }
+    sub_fields <- field_schema$schema$fields
+    # NULL means the nested object is absent — return schema-shaped NAs
+    if (is.null(x)) {
+      if (field_schema$related_type == "to_one") return(make_na_record(sub_fields))
+      if (field_schema$related_type == "to_many") return(list(make_na_record(sub_fields)))
+    }
+    if (field_schema$related_type == "to_one") {
+      # empty list means the nested object is absent — return schema-shaped NAs
+      if (length(x) == 0) return(make_na_record(sub_fields))
+      for (subfield in names(x)) {
+        if (!subfield %in% names(sub_fields)) {
+          warning(
+            "Subfield '", subfield, "' not found in schema for field '", field_name,
+            "'. Schema may be inconsistent with the webservice response. ",
+            "Subfield returned as-is."
+          )
+          next
+        }
+        x[[subfield]] <- coerce_by_schema(x[[subfield]], subfield, sub_fields[[subfield]])
+      }
+      return(x)
+    } else if (field_schema$related_type == "to_many") {
+      # empty list means no observations — return one NA record to preserve schema
+      if (length(x) == 0) return(list(make_na_record(sub_fields)))
+      return(lapply(x, function(item) {
+        if (is.null(item) || !is.list(item)) {
+          warning(
+            "Schema violation in 'to_many' field: expected a named list with fields: ",
+            paste(names(sub_fields), collapse = ", "),
+            "; received: '", paste(item, collapse = ", "), "'. ",
+            "Value returned as-is. This may cause issues in downstream operations like merging)."
+          )
+          return(item)
+        }
+      for (subfield in names(item)) {
+          if (!subfield %in% names(sub_fields)) {
+            warning(
+              "Subfield '", subfield, "' not found in schema for field '", field_name,
+              "'. Schema may be inconsistent with the webservice response. ",
+              "Subfield returned as-is."
+            )
+            next
+          }
+          item[[subfield]] <- coerce_by_schema(item[[subfield]], subfield, sub_fields[[subfield]])
+        }
+      item
+      }))
+    } else {
+      stop(paste0("Unknown related_type: '", field_schema$related_type, "'."))
+    }
+  }
+  # apply schema-based coercion to each top-level field of a single entity
+  foo <- function(x) {
+    if (!exists("fields", schema)) {
+      stop("Schema is missing 'fields' information.")
+    }
+    for (field in names(x)) {
+      if (!field %in% names(schema$fields)) {
+        warning(
+          "Field '", field, "' not found in schema. ",
+          "Schema may be inconsistent with the webservice response. ",
+          "Field returned as-is."
+        )
+        next
+      }
+      x[[field]] <- coerce_by_schema(x[[field]], field, schema$fields[[field]])
+    }
+    # map any remaining NULL to NA
+    lapply(x, function(v) if (is.null(v)) NA_character_ else v)
+  }
+  result <- foo(res)
+  names(result) <- names(res)
+  class(result) <- class(res)
+  return(result)
+}
+
+#' Get ChEMBL webservice schema
+#'
+#' Retrieve ChEMBL webserice schema and optionally convert it to a nested list
+#' of field classes. Note, each schema is retrieved once per session.
+#' @param resource character; the ChEMBL resource.
+#' @param verbose logical; should verbose messages be printed to the console?
+#' @return Webservice schema as a list.
+#' @noRd
+get_chembl_ws_schema <- function(
+  resource,
+  verbose = getOption("verbose")
+  ) {
+  resource <- match.arg(resource, chembl_resources())
+  # Retrieve and cache schema for type enforcement
+  if (exists(resource, envir = .chembl_schema_cache, inherits = FALSE)) {
+    if (verbose) message("Using cached schema.")
+    schema <- get(resource, envir = .chembl_schema_cache)
+  } else {
+    if (verbose) message("Retrieving schema to enforce data types.")
+    schema <- jsonlite::fromJSON(paste0(
+      "https://www.ebi.ac.uk/chembl/api/data/", resource, "/schema.json"
+    ))
+    assign(resource, schema, envir = .chembl_schema_cache)
+  }
+  return(schema)
 }

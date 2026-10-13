@@ -1,7 +1,10 @@
-up <- ping_service("wd")
+up <- ifelse(Sys.getenv("RUN_ONLINE_TESTS") == "true", ping_service("wd"), TRUE)
+
 test_that("get_wdid returns correct results", {
   skip_on_cran()
   skip_if_not(up, "Wikidata service is down")
+
+
   # test general
   comps <- c('DDT', 'Aspirin', 'xdewrwdcadsr4w', 'acetic acid')
   o1 <- get_wdid(comps, match = 'best')
@@ -15,7 +18,7 @@ test_that("get_wdid returns correct results", {
   expect_s3_class(o3, 'data.frame')
   expect_s3_class(o4, 'data.frame')
 
-  expect_equal(o1$wdid, c("Q163648", "Q20987744", NA, 'Q47512'),
+  expect_equal(o1$wdid, c("Q163648", "Q10420388", NA, 'Q47512'),
                ignore_attr = TRUE)
   expect_true(all(c("Q163648", "Q949424") %in% o2$wdid))
 })
